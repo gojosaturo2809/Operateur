@@ -46,7 +46,10 @@ class AuthController extends BaseController
             return redirect()->to(base_url('client/dashboard'));
         }
 
-        return view('client/login');
+        $prefixeModel = new PrefixeModel();
+        return view('client/login', [
+            'prefixes' => $prefixeModel->orderBy('prefixe', 'ASC')->findAll(),
+        ]);
     }
 
     
