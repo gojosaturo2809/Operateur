@@ -4,8 +4,8 @@ namespace App\Controllers;
 
 use App\Models\GainModel;
 use App\Models\ClientModel;
-use App\Models\OperationModel;
-use App\Models\TypeOperationModel;
+use App\Models\AdminModel;
+use App\Models\TypeAdminModel;
 use App\Models\PrefixeModel;
 
 class OperateurController extends BaseController
@@ -45,9 +45,9 @@ class OperateurController extends BaseController
         // Le solde n'est pas une colonne persistée : il dépend des opérations
         // (dépôts, retraits et transferts reçus/émis). On le calcule donc avec
         // la même règle que celle utilisée sur le tableau de bord du client.
-        $operationModel = new OperationModel();
+        $AdminModel = new AdminModel();
         foreach ($clients as &$client) {
-            $client['solde'] = $operationModel->calculateSolde(
+            $client['solde'] = $AdminModel->calculateSolde(
                 (int) $client['id'],
                 (string) $client['numero_telephone']
             );

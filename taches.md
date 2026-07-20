@@ -113,9 +113,9 @@ GROUP BY t.nom;
 
 ## 3 . Version 2 (Tag v2) - Livraison 17h10
 
-### 3.1 . Coté Operateur [Hasimanjaka]
+### 3.1 . Coté Operateur []
 - **Configuration des opérateurs tiers et préfixes**
-    - [ ] [15minute] **Page** : `app/Views/operateur/config_operateurs.php`
+    - [ok] [15minute] **Page** : `app/Views/operateur/config_operateurs.php`
     - [ ] [15minute] **Fonction** : `OperateurController::storeOperateur()` et `storePrefixe()`
     - [ ] [10minute] **Base** : Insertion dans les tables `operateurs` (ex: Telma, Orange) et liaison des préfixes associés (034, 032...)
     - [ ] [15minute] **Integration** : Formulaire de gestion de la commission en % par opérateur tiers

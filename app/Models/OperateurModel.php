@@ -6,36 +6,16 @@ use CodeIgniter\Model;
 
 class OperateurModel extends Model
 {
-    protected $table         = 'operateurs';
-    protected $primaryKey    = 'id';
-    protected $returnType    = 'array';
-    protected $allowedFields = ['nom_utilisateur', 'mot_de_passe_hash'];
-
-    protected $useTimestamps  = false; // date_creation géré par DEFAULT
-
-    // ── Authentification ──────────────────────────────────────────────────────
+    protected $table            = 'operateurs';
+    protected $primaryKey       = 'id';
+    protected $allowedFields    = ['nom', 'est_principal', 'commission_inter_pct'];
+    protected $returnType       = 'array';
 
     /**
-     * Vérifie les identifiants et retourne l'opérateur si valide, null sinon.
-     *
-     * @param string $nomUtilisateur
-     * @param string $motDePasse     Mot de passe en clair
-     * @return array|null
+     * Récupère uniquement les opérateurs tiers (autres réseaux)
      */
-    public function authenticate(string $nomUtilisateur, string $motDePasse): ?array
+    public function getOperateursTiers()
     {
-        $operateur = $this->where('nom_utilisateur', trim($nomUtilisateur))->first();
-
-        if (!$operateur) {
-            return null;
-        }
-
-        if (!password_verify($motDePasse, $operateur['mot_de_passe_hash'])) {
-            return null;
-        }
-
-        return $operateur;
+        return $this->where('est_principal', false)->findAll();
     }
-
-    
 }
