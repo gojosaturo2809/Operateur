@@ -1,135 +1,90 @@
 -- ============================================================
--- OPERATEURS
+--  MobiMoney — Schéma SQLite
 -- ============================================================
 
-DELETE FROM operateurs WHERE id > 1;
+-- 1. Préfixes autorisés par l'opérateur (ex: 033, 037)
+CREATE TABLE prefixes (
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    prefixe TEXT NOT NULL UNIQUE,
+    id_operateur INT NOT NULL,
+    FOREIGN KEY (id_operateur) REFERENCES operateurs(id)
+);
 
-INSERT INTO operateurs (nom, est_principal, commission_inter_pct) VALUES
-('Orange',0,1.50),
-('Airtel',0,2.00),
-('Telma',0,1.75);
+-- 2. Types d'opérations
+CREATE TABLE types_operation (
+    id  INTEGER PRIMARY KEY AUTOINCREMENT,
+    nom TEXT NOT NULL UNIQUE  -- 'depot', 'retrait', 'transfert'
+);
 
--- ============================================================
--- PREFIXES
--- ============================================================
+-- 3. Barèmes de frais (modifiable par tranche)
+CREATE TABLE bareme_frais (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_type_operation INTEGER NOT NULL,
+    montant_min       REAL NOT NULL,
+    montant_max       REAL NOT NULL,
+    frais             REAL NOT NULL,
+    FOREIGN KEY (id_type_operation) REFERENCES types_operation(id)
+);
 
-INSERT INTO prefixes(prefixe,id_operateur) VALUES
-('033',1),
-('037',1),
+-- 4. Clients (login automatique via numéro de téléphone)
+CREATE TABLE clients (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    numero_telephone TEXT NOT NULL UNIQUE
+);
 
-('032',2),
-('038',2),
+-- 5. Opérations (historique global)
+CREATE TABLE operations (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_client           INTEGER NOT NULL,
+    id_type_operation   INTEGER NOT NULL,
+    numero_destinataire TEXT    NULL, 
+    montant             REAL    NOT NULL,
+    frais_applique      REAL    NOT NULL, -- Frais figé au moment de la transaction
+    date_operation      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    inclure_frais_retrait TINYINT(1) DEFAULT 0,
+    batch_envoi_multiple VARCHAR(50) DEFAULT NULL,
+    FOREIGN KEY (id_client)         REFERENCES clients(id),
+    FOREIGN KEY (id_type_operation) REFERENCES types_operation(id)
+);
 
-('034',3),
-
-('039',4);
-
--- ============================================================
--- CLIENTS
--- ============================================================
-
-INSERT INTO clients(numero_telephone) VALUES
-('0331234567'),
-('0339876543'),
-('0371111111'),
-('0372222222'),
-('0333333333'),
-('0374444444'),
-('0335555555'),
-('0376666666'),
-('0337777777'),
-('0378888888');
-
--- ============================================================
--- BAREME DES FRAIS
--- ============================================================
-
--- dépôt
-
-INSERT INTO bareme_frais(id_type_operation,montant_min,montant_max,frais)
-VALUES
-(1,0,50000,0),
-(1,50001,100000,0),
-(1,100001,99999999,0);
-
--- retrait
-
-INSERT INTO bareme_frais(id_type_operation,montant_min,montant_max,frais)
-VALUES
-(2,0,10000,200),
-(2,10001,50000,500),
-(2,50001,100000,1000),
-(2,100001,99999999,2000);
-
--- transfert
-
-INSERT INTO bareme_frais(id_type_operation,montant_min,montant_max,frais)
-VALUES
-(3,0,10000,150),
-(3,10001,50000,400),
-(3,50001,100000,800),
-(3,100001,99999999,1500);
+-- 6. Opérateurs / Administrateurs (login par mot de passe)
+CREATE TABLE administrateurs (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    nom_utilisateur   TEXT NOT NULL UNIQUE,
+    mot_de_passe_hash TEXT NOT NULL,
+    date_creation     DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
 -- ============================================================
--- OPERATIONS
+--  VUE : Situation des gains (retraits + transferts uniquement)
+-- ============================================================
+CREATE VIEW vue_situation_gains AS
+SELECT
+    t.nom                  AS type_operation,
+    COUNT(o.id)            AS volume_transactions,
+    SUM(o.montant)         AS volume_financier,
+    SUM(o.frais_applique)  AS total_gains
+FROM operations o
+JOIN types_operation t ON o.id_type_operation = t.id
+WHERE t.nom IN ('retrait', 'transfert')
+GROUP BY t.nom;
+
+-- ============================================================
+--  DONNÉES INITIALES
 -- ============================================================
 
-INSERT INTO operations
-(id_client,id_type_operation,numero_destinataire,montant,frais_applique,date_operation)
-VALUES
 
--- DEPOTS
+INSERT INTO administrateurs (nom_utilisateur, mot_de_passe_hash)
+VALUES (
+    'admin',
+    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
+);
 
-(1,1,NULL,10000,0,'2026-01-10'),
-(2,1,NULL,25000,0,'2026-01-15'),
-(3,1,NULL,50000,0,'2026-02-02'),
-(4,1,NULL,100000,0,'2026-02-10'),
-(5,1,NULL,20000,0,'2026-03-01'),
-(6,1,NULL,30000,0,'2026-03-12'),
-(7,1,NULL,150000,0,'2026-04-05'),
-(8,1,NULL,60000,0,'2026-05-09'),
-(9,1,NULL,120000,0,'2026-06-11'),
-(10,1,NULL,5000,0,'2026-07-02'),
 
--- RETRAITS
+CREATE TABLE operateurs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(50) NOT NULL,               -- Ex: 'MonRéseau', 'Telma', 'Orange', 'Airtel'
+    est_principal BOOLEAN DEFAULT FALSE,    -- TRUE pour votre propre service, FALSE pour les autres
+    commission_inter_pct DECIMAL(5, 2) DEFAULT 0.00 -- Le % de commission en plus pour les transferts sortants
+);
 
-(1,2,NULL,5000,200,'2026-01-12'),
-(2,2,NULL,10000,200,'2026-01-18'),
-(3,2,NULL,25000,500,'2026-02-05'),
-(4,2,NULL,40000,500,'2026-02-15'),
-(5,2,NULL,70000,1000,'2026-03-08'),
-(6,2,NULL,150000,2000,'2026-03-28'),
-(7,2,NULL,9000,200,'2026-04-09'),
-(8,2,NULL,55000,1000,'2026-05-18'),
-(9,2,NULL,100000,1000,'2026-06-15'),
-(10,2,NULL,200000,2000,'2026-07-12'),
-
--- TRANSFERTS LOCAUX
-
-(1,3,'0339999999',15000,400,'2026-01-20'),
-(2,3,'0378888888',25000,400,'2026-01-25'),
-(3,3,'0337777777',70000,800,'2026-02-20'),
-(4,3,'0376666666',120000,1500,'2026-03-03'),
-(5,3,'0335555555',9000,150,'2026-03-15'),
-(6,3,'0374444444',45000,400,'2026-04-01'),
-(7,3,'0332222222',50000,400,'2026-04-15'),
-(8,3,'0371234567',100000,800,'2026-05-21'),
-
--- TRANSFERTS ORANGE
-
-(1,3,'0321234567',20000,400,'2026-05-25'),
-(2,3,'0387654321',80000,800,'2026-05-28'),
-(3,3,'0325555555',150000,1500,'2026-06-02'),
-
--- TRANSFERTS AIRTEL
-
-(4,3,'0341234567',18000,400,'2026-06-08'),
-(5,3,'0347654321',40000,400,'2026-06-18'),
-(6,3,'0349999999',130000,1500,'2026-06-24'),
-
--- TRANSFERTS TELMA
-
-(7,3,'0391234567',35000,400,'2026-07-01'),
-(8,3,'0392222222',65000,800,'2026-07-05'),
-(9,3,'0393333333',100000,800,'2026-07-10'),
-(10,3,'0394444444',180000,1500,'2026-07-15');
