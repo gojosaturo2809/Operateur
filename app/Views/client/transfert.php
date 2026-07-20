@@ -47,10 +47,7 @@
                 >
             </div>
 
-            <div class="form-check mt-3 mb-3">
-                <input class="form-check-input" type="checkbox" value="1" id="inclureFraisRetrait" name="inclure_frais_retrait">
-                <label class="form-check-label" for="inclureFraisRetrait">Inclure les frais de retrait du destinataire</label>
-            <!-- Badge réseau détecté -->
+           
             <div id="badgeReseau" style="display:none;margin-top:-.5rem;margin-bottom:.9rem;">
                 <span id="badgeReseauLabel"
                       style="display:inline-flex;align-items:center;gap:.375rem;
