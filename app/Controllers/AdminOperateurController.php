@@ -71,6 +71,32 @@ class AdminOperateurController extends BaseController
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    //  COMPENSATION / CLEARING
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Tableau de compensation / clearing inter-opérateurs.
+     * Montre les montants nets à reverser à chaque réseau tiers.
+     */
+   public function compensation(): string
+{
+    $gainModel = new GainModel();
+
+    return view('operateur/compensation', [
+        'title'                   => 'Compensation / Clearing',
+        'pageTitle'               => 'Compensation Inter-Opérateurs',
+        'sidebar'                 => 'sidebar_operateur',
+
+        'lignes'                  => $gainModel->getCompensationParOperateur(),
+        'totalCommissions'        => $gainModel->getTotalCompensation(),
+        'totalMontantTransfere'   => $gainModel->getTotalMontantTransfere(),
+        'totalFraisPercus'        => $gainModel->getTotalFraisPercus(),
+        'totalTransferts'         => $gainModel->getTotalTransferts(),
+        'nbOperateurs'            => $gainModel->getNombreOperateurs(),
+    ]);
+}
+
+    // ══════════════════════════════════════════════════════════════════════════
     //  CLIENTS
     // ══════════════════════════════════════════════════════════════════════════
 
