@@ -21,13 +21,13 @@ class OperateurController extends BaseController
      */
     public function configOperateurs()
     {
-        data = [
+        $data = [
             'title'      => 'Configuration Multi-Opérateurs',
             'operateurs' => $this->operateurModel->findAll(),
             'prefixes'   => $this->prefixeModel->getPrefixesAvecOperateur()
         ];
 
-        return view('operateur/config_operateurs', data);
+        return view('operateur/config_operateurs', $data);
     }
 
     /**

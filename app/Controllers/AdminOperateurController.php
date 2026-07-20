@@ -102,8 +102,8 @@ class AdminOperateurController extends BaseController
 
     public function clients(): string
     {
-        $clients = $this->db->table('clients')
-            ->orderBy('id', 'DESC')
+        $clients = $this->db->table('vue_client_solde')
+            ->orderBy('client_id', 'DESC')
             ->get()->getResultArray();
 
         return view('operateur/clients', [
