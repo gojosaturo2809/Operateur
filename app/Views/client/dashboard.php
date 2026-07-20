@@ -51,6 +51,16 @@
         </div>
     </a>
 
+    <a href="<?= base_url('client/envoi-multiple') ?>" class="client-action-tile">
+        <span class="client-action-tile-icon" style="background:#f3e8ff;color:#9333ea;">
+            <i class="bi bi-people-fill"></i>
+        </span>
+        <div>
+            <div class="client-action-tile-label">Envoi Multiple Divisé</div>
+            <div class="client-action-tile-sub">Répartir un montant</div>
+        </div>
+    </a>
+
     <a href="<?= base_url('client/historique') ?>" class="client-action-tile">
         <span class="client-action-tile-icon" style="background:#fffbeb;color:#f59e0b;">
             <i class="bi bi-clock-history"></i>
