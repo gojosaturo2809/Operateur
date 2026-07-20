@@ -116,9 +116,9 @@ GROUP BY t.nom;
 ### 3.1 . Coté Operateur []
 - **Configuration des opérateurs tiers et préfixes**
     - [ok] [15minute] **Page** : `app/Views/operateur/config_operateurs.php`
-    - [ ] [15minute] **Fonction** : `AdminOperateurController::storeOperateur()` et `storePrefixe()`
-    - [ ] [10minute] **Base** : Insertion dans les tables `operateurs` (ex: Telma, Orange) et liaison des préfixes associés (034, 032...)
-    - [ ] [15minute] **Integration** : Formulaire de gestion de la commission en % par opérateur tiers
+    - [ok] [15minute] **Fonction** : `AdminOperateurController::storeOperateur()` et `storePrefixe()`
+    - [ok] [10minute] **Base** : Insertion dans les tables `operateurs` (ex: Telma, Orange) et liaison des préfixes associés (034, 032...)
+    - [ok] [15minute] **Integration** : Formulaire de gestion de la commission en % par opérateur tiers
 - **Séparation des gains (Opérateur Principal vs Autres)**
     - [ ] [15minute] **Page** : `app/Views/operateur/gains.php` (Mise à jour)
     - [ ] [20minute] **Fonction** : `AdminOperateurController::gainsSynthese()`
