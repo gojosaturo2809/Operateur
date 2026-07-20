@@ -42,22 +42,17 @@
                     placeholder="Ex : 033 12 345 67"
                     autocomplete="tel"
                     inputmode="tel"
+                    maxlength="14"
                     required
                 >
             </div>
 
-<<<<<<< HEAD
-            <div class="form-check mt-3 mb-3">
-                <input class="form-check-input" type="checkbox" value="1" id="inclureFraisRetrait" name="inclure_frais_retrait">
-                <label class="form-check-label" for="inclureFraisRetrait">Inclure les frais de retrait du destinataire</label>
-=======
             <!-- Badge réseau détecté -->
             <div id="badgeReseau" style="display:none;margin-top:-.5rem;margin-bottom:.9rem;">
                 <span id="badgeReseauLabel"
                       style="display:inline-flex;align-items:center;gap:.375rem;
                              padding:.25rem .65rem;border-radius:2rem;font-size:.75rem;font-weight:600;">
                 </span>
->>>>>>> 3f44135889f07278492d8f6baf55c309fdf2aace
             </div>
 
             <!-- Montant -->
@@ -77,8 +72,8 @@
                 <span class="client-amount-unit">Ar</span>
             </div>
 
-            <!-- Option frais de retrait — visible uniquement sur réseau local -->
-            <div id="optionFraisRetrait" style="display:none;margin:.75rem 0 .5rem;">
+            <!-- Option frais de retrait -->
+            <div id="optionFraisRetrait" style="margin:.75rem 0 .5rem;">
                 <label style="display:flex;align-items:flex-start;gap:.6rem;cursor:pointer;">
                     <input type="checkbox" value="1"
                            id="inclureFraisRetrait" name="inclure_frais_retrait"
@@ -137,156 +132,103 @@
 
 <?= $this->section('scripts') ?>
 <script>
-const baremes  = <?= $baremes ?? '[]' ?>;
+const baremes = <?= $baremes ?? '[]' ?>;
 const baremesRetrait = <?= $baremesRetrait ?? '[]' ?>;
-const input    = document.getElementById('montantInput');
-const recapM   = document.getElementById('recapMontant');
+const prefixesOperateurs = <?= $prefixesOperateurs ?? '[]' ?>;
+const inputMontant = document.getElementById('montantInput');
+const inputDest = document.getElementById('numero_destinataire');
+const checkFraisRetrait = document.getElementById('inclureFraisRetrait');
+const recapMontant = document.getElementById('recapMontant');
 const txtFrais = document.getElementById('txtFrais');
 const txtTotal = document.getElementById('txtTotal');
-const warn     = document.getElementById('warnBareme');
-const btn      = document.getElementById('btnSubmit');
-const inclureRetrait = document.getElementById('inclureFraisRetrait');
+const warn = document.getElementById('warnBareme');
+const warnMessage = document.getElementById('warnMessage');
+const btn = document.getElementById('btnSubmit');
+const badgeReseau = document.getElementById('badgeReseau');
+const badgeReseauLabel = document.getElementById('badgeReseauLabel');
+const ligneCommission = document.getElementById('ligneCommission');
+const txtCommission = document.getElementById('txtCommission');
+const ligneFraisRetrait = document.getElementById('ligneFraisRetrait');
+const txtFraisRetrait = document.getElementById('txtFraisRetrait');
 
-/* ── Références DOM ────────────────────────────────────────────── */
-const inputMontant        = document.getElementById('montantInput');
-const inputDest           = document.getElementById('numero_destinataire');
-const checkFraisRetrait   = document.getElementById('inclureFraisRetrait');
-const blockFraisRetrait   = document.getElementById('optionFraisRetrait');
-const badgeReseau         = document.getElementById('badgeReseau');
-const badgeReseauLabel    = document.getElementById('badgeReseauLabel');
+const fmt = n => Number(n).toLocaleString('fr-FR') + ' Ar';
+const trouverBareme = (liste, montant) => liste.find(b => montant >= Number(b.montant_min) && montant <= Number(b.montant_max));
+const getOperateur = () => {
+    const numero = inputDest.value.replace(/\D/g, '');
+    return numero.length >= 3 ? prefixesOperateurs.find(p => p.prefixe === numero.slice(0, 3)) : null;
+};
 
-input.addEventListener('input', function () {
-    const montant = parseFloat(this.value) || 0;
-    let frais = 0, fraisRetrait = 0, trouve = false;
-
-/* ── Helpers ───────────────────────────────────────────────────── */
-function fmt(n) {
-    return n.toLocaleString('fr-FR') + ' Ar';
-}
-
-function trouverBareme(liste, montant) {
-    return liste.find(
-        b => montant >= parseFloat(b.montant_min) && montant <= parseFloat(b.montant_max)
-    ) || null;
-}
-
-function afficherWarn(msg) {
-    elWarnMsg.textContent = msg;
-    elWarn.style.display  = '';
-}
-
-function cacherWarn() {
-    elWarn.style.display = 'none';
-}
-
-function getOperateur() {
-    /* Extrait les chiffres, prend les 3 premiers pour le préfixe */
-    const num = inputDest.value.replace(/\D/g, '');
-    if (num.length < 3) return null;
-    return prefixesOperateurs.find(p => p.prefixe === num.slice(0, 3)) || null;
-}
-
-/* ── Recalcul principal ────────────────────────────────────────── */
 function recalculer() {
-    const montant  = parseFloat(inputMontant.value) || 0;
+    const montant = Number(inputMontant.value) || 0;
+    const numero = inputDest.value.replace(/\D/g, '');
     const operateur = getOperateur();
-    const estLocal  = operateur !== null && Number(operateur.est_principal) === 1;
-    const estTiers  = operateur !== null && !estLocal;
+    const estTiers = operateur && Number(operateur.est_principal) !== 1;
+    const baremeTransfert = montant > 0 ? trouverBareme(baremes, montant) : null;
+    const baremeRetrait = montant > 0 ? trouverBareme(baremesRetrait, montant) : null;
 
-    /* ─ Badge réseau ─────────────────────────────────────────── */
+    badgeReseau.style.display = operateur ? '' : 'none';
     if (operateur) {
-        badgeReseau.style.display = '';
-        if (estLocal) {
-            badgeReseauLabel.style.cssText =
-                'display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .65rem;' +
-                'border-radius:2rem;font-size:.75rem;font-weight:600;' +
-                'background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;';
-            badgeReseauLabel.innerHTML =
-                '<i class="bi bi-house-fill" style="font-size:.65rem;"></i>' +
-                ' Réseau local — ' + operateur.operateur_nom;
-        } else {
-            badgeReseauLabel.style.cssText =
-                'display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .65rem;' +
-                'border-radius:2rem;font-size:.75rem;font-weight:600;' +
-                'background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;';
-            badgeReseauLabel.innerHTML =
-                '<i class="bi bi-broadcast" style="font-size:.65rem;"></i>' +
-                ' Réseau tiers — ' + operateur.operateur_nom;
-        }
-    } else {
-        badgeReseau.style.display = 'none';
+        const estLocal = Number(operateur.est_principal) === 1;
+        badgeReseauLabel.textContent = (estLocal ? 'Réseau local — ' : 'Réseau tiers — ') + operateur.operateur_nom;
+        badgeReseauLabel.style.background = estLocal ? '#ecfdf5' : '#f5f3ff';
+        badgeReseauLabel.style.color = estLocal ? '#059669' : '#7c3aed';
     }
+    ligneCommission.style.display = 'none';
+    ligneFraisRetrait.style.display = 'none';
+    warn.style.display = 'none';
 
-    /* ─ Option frais de retrait : visible seulement réseau local ─ */
-    blockFraisRetrait.style.display = estLocal ? '' : 'none';
-    if (!estLocal) {
-        checkFraisRetrait.checked = false;
-    }
-
-    /* ─ Reset lignes récap ───────────────────────────────────── */
-    elLigneCommission.style.display   = 'none';
-    elLigneFraisRetrait.style.display = 'none';
-    cacherWarn();
-
-    /* ─ Pas de montant ───────────────────────────────────────── */
-    if (montant <= 0) {
-        elRecapMontant.textContent = '—';
-        elFrais.textContent        = '—';
-        elTotal.textContent        = '—';
-        btn.disabled               = false;
-        return;
-    }
-
-    /* ─ Barème de transfert ──────────────────────────────────── */
-    const baremeTransfert = trouverBareme(baremes, montant);
-    if (!baremeTransfert) {
-        elRecapMontant.textContent = fmt(montant);
-        elFrais.textContent        = 'Hors barème';
-        elTotal.textContent        = '—';
-        afficherWarn('Ce montant est hors barème — transfert indisponible.');
+    // Les numéros mobiles pris en charge ont 10 chiffres, avec un préfixe configuré.
+    if (numero.length === 0) {
+        inputDest.setCustomValidity('Saisissez le numéro du destinataire.');
         btn.disabled = true;
         return;
     }
+    if (numero.length !== 10) {
+        inputDest.setCustomValidity('Le numéro doit contenir exactement 10 chiffres.');
+        warnMessage.textContent = 'Le numéro du destinataire doit contenir 10 chiffres.';
+        warn.style.display = ''; btn.disabled = true;
+        return;
+    }
+    if (!operateur) {
+        inputDest.setCustomValidity('Le préfixe du numéro n’est associé à aucun opérateur.');
+        warnMessage.textContent = 'Préfixe non reconnu : choisissez un numéro d’un opérateur configuré.';
+        warn.style.display = ''; btn.disabled = true;
+        return;
+    }
+    inputDest.setCustomValidity('');
 
-    const fraisEnvoi = parseFloat(baremeTransfert.frais);
-
-    /* ─ Commission inter-opérateur ───────────────────────────── */
-    let commission = 0;
-    if (estTiers) {
-        const taux = parseFloat(operateur.commission_inter_pct) || 0;
-        /* Même calcul que le serveur : round(montant * taux / 100, 2) */
-        commission = Math.round(montant * taux) / 100;
-        if (commission > 0) {
-            elLigneCommission.style.display = '';
-            elCommission.textContent        = fmt(commission);
-        }
+    if (montant <= 0) {
+        recapMontant.textContent = txtFrais.textContent = txtTotal.textContent = '—';
+        btn.disabled = true;
+        return;
+    }
+    if (!baremeTransfert) {
+        recapMontant.textContent = fmt(montant);
+        txtFrais.textContent = 'Hors barème'; txtTotal.textContent = '—';
+        warnMessage.textContent = 'Ce montant est hors barème — transfert indisponible.';
+        warn.style.display = ''; btn.disabled = true;
+        return;
     }
 
-    if (montant > 0 && trouve) {
-        if (inclureRetrait.checked) {
-            const retrait = baremesRetrait.find(b => montant >= b.montant_min && montant <= b.montant_max);
-            if (!retrait) { warn.style.display = ''; btn.disabled = true; return; }
-            fraisRetrait = parseFloat(retrait.frais);
-        }
-        recapM.textContent   = fmt(montant);
-        txtFrais.textContent = fmt(frais + fraisRetrait);
-        txtTotal.textContent = fmt(montant + frais + fraisRetrait);
-        warn.style.display   = 'none';
-        btn.disabled         = false;
-    } else if (montant > 0) {
-        recapM.textContent   = fmt(montant);
-        txtFrais.textContent = 'Hors barème';
-        txtTotal.textContent = '—';
-        warn.style.display   = '';
-        btn.disabled         = true;
-    } else {
-        recapM.textContent   = '—';
-        txtFrais.textContent = '—';
-        txtTotal.textContent = '—';
-        warn.style.display   = 'none';
-        btn.disabled         = false;
+    const fraisEnvoi = Number(baremeTransfert.frais);
+    const commission = estTiers ? Math.round(montant * Number(operateur.commission_inter_pct || 0)) / 100 : 0;
+    const fraisRetrait = checkFraisRetrait.checked && baremeRetrait ? Number(baremeRetrait.frais) : 0;
+    if (checkFraisRetrait.checked && !baremeRetrait) {
+        warnMessage.textContent = 'Ce montant est hors barème de retrait.';
+        warn.style.display = ''; btn.disabled = true;
+        return;
     }
-});
-inclureRetrait.addEventListener('change', () => input.dispatchEvent(new Event('input')));
+    if (commission > 0) { ligneCommission.style.display = ''; txtCommission.textContent = fmt(commission); }
+    if (fraisRetrait > 0) { ligneFraisRetrait.style.display = ''; txtFraisRetrait.textContent = fmt(fraisRetrait); }
+    recapMontant.textContent = fmt(montant);
+    txtFrais.textContent = fmt(fraisEnvoi);
+    txtTotal.textContent = fmt(montant + fraisEnvoi + commission + fraisRetrait);
+    btn.disabled = false;
+}
+
+inputMontant.addEventListener('input', recalculer);
+inputDest.addEventListener('input', recalculer);
+checkFraisRetrait.addEventListener('change', recalculer);
+recalculer();
 </script>
 <?= $this->endSection() ?>

@@ -102,9 +102,29 @@ class AdminOperateurController extends BaseController
 
     public function clients(): string
     {
-        $clients = $this->db->table('clients')
-            ->orderBy('id', 'DESC')
-            ->get()->getResultArray();
+        // Le solde n'est pas stocké dans `clients` : il est calculé à partir
+        // des opérations réalisées et des transferts reçus par le numéro.
+        $clients = $this->db->query("
+            SELECT
+                c.*,
+                COALESCE((
+                    SELECT SUM(CASE
+                        WHEN o.id_type_operation = 1 THEN o.montant
+                        WHEN o.id_type_operation IN (2, 3) THEN -(o.montant + o.frais_applique)
+                        ELSE 0
+                    END)
+                    FROM operations o
+                    WHERE o.id_client = c.id
+                ), 0)
+                + COALESCE((
+                    SELECT SUM(o.montant)
+                    FROM operations o
+                    WHERE o.id_type_operation = 3
+                      AND o.numero_destinataire = c.numero_telephone
+                ), 0) AS solde
+            FROM clients c
+            ORDER BY c.id DESC
+        ")->getResultArray();
 
         return view('operateur/clients', [
             'title'     => 'Comptes clients',

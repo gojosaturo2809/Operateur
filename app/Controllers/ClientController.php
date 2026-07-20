@@ -120,11 +120,16 @@ class ClientController extends BaseController
         $db = db_connect();
         $baremes = $db->query("SELECT montant_min, montant_max, frais FROM bareme_frais WHERE id_type_operation = 3")->getResultArray();
         $baremesRetrait = $db->query("SELECT montant_min, montant_max, frais FROM bareme_frais WHERE id_type_operation = 2")->getResultArray();
+        $prefixesOperateurs = $db->table('prefixes p')
+            ->select('p.prefixe, op.nom AS operateur_nom, op.est_principal, op.commission_inter_pct')
+            ->join('operateurs op', 'op.id = p.id_operateur')
+            ->get()->getResultArray();
 
         return view('client/transfert', [
             'title'   => 'Faire un Transfert',
             'baremes' => json_encode($baremes),
-            'baremesRetrait' => json_encode($baremesRetrait)
+            'baremesRetrait' => json_encode($baremesRetrait),
+            'prefixesOperateurs' => json_encode($prefixesOperateurs),
         ]);
     }
 
@@ -164,15 +169,14 @@ class ClientController extends BaseController
         $destinataire = preg_replace('/\D+/', '', (string)$this->request->getPost('numero_destinataire'));
         $montant      = (float)$this->request->getPost('montant');
 
-        if ($montant <= 0 || $destinataire === '' || strlen($destinataire) < 3) {
+        if ($montant <= 0 || strlen($destinataire) !== 10) {
             return redirect()->back()->with('erreur', 'Le numéro et le montant du transfert sont invalides.');
         }
         if ($destinataire === $telephone) {
             return redirect()->back()->with('erreur', 'Opération invalide : impossible de s\'envoyer un transfert.');
         }
 
-        // Identification du réseau de destination : le client ne peut pas
-        // appliquer les frais de retrait à un transfert inter-opérateurs.
+        // Le transfert est autorisé vers tout opérateur enregistré via ses préfixes.
         $db = db_connect();
         $reseauDestination = $db->table('prefixes p')
             ->select('op.est_principal, op.commission_inter_pct')
@@ -188,10 +192,15 @@ class ClientController extends BaseController
             return redirect()->back()->with('erreur', 'Montant hors limites du barème.');
         }
 
+        $commission = 0.0;
+        if ((int) $reseauDestination['est_principal'] !== 1) {
+            $commission = round($montant * (float) $reseauDestination['commission_inter_pct'] / 100, 2);
+        }
+
         $inclure = $this->request->getPost('inclure_frais_retrait') === '1';
         $fraisRetrait = $inclure ? $this->operationModel->getFraisApplicable(2, $montant) : 0;
         if ($fraisRetrait === null) return redirect()->back()->with('erreur', 'Montant hors barème de retrait.');
-        $fraisTotal = $frais + $fraisRetrait;
+        $fraisTotal = $frais + $commission + $fraisRetrait;
         $soldeActuel = $this->operationModel->calculateSolde($id_client, $telephone);
         if ($soldeActuel < ($montant + $fraisTotal)) {
             return redirect()->back()->with('erreur', 'Provision insuffisante pour finaliser le transfert.');
