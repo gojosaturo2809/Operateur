@@ -3,7 +3,6 @@
 namespace App\Controllers;
 
 use App\Models\OperationModel;
-use App\Models\PrefixeModel;
 
 class ClientController extends BaseController
 {
@@ -165,13 +164,22 @@ class ClientController extends BaseController
         $destinataire = preg_replace('/\D+/', '', (string)$this->request->getPost('numero_destinataire'));
         $montant      = (float)$this->request->getPost('montant');
 
+        if ($montant <= 0 || $destinataire === '' || strlen($destinataire) < 3) {
+            return redirect()->back()->with('erreur', 'Le numéro et le montant du transfert sont invalides.');
+        }
         if ($destinataire === $telephone) {
             return redirect()->back()->with('erreur', 'Opération invalide : impossible de s\'envoyer un transfert.');
         }
 
-        // Validation du préfixe destinataire
-        $prefixeModel = new PrefixeModel();
-        if (!$prefixeModel->validerPrefixe($destinataire)) {
+        // Identification du réseau de destination : le client ne peut pas
+        // appliquer les frais de retrait à un transfert inter-opérateurs.
+        $db = db_connect();
+        $reseauDestination = $db->table('prefixes p')
+            ->select('op.est_principal, op.commission_inter_pct')
+            ->join('operateurs op', 'op.id = p.id_operateur')
+            ->where('p.prefixe', substr($destinataire, 0, 3))
+            ->get()->getRowArray();
+        if ($reseauDestination === null) {
             return redirect()->back()->with('erreur', 'Numéro destinataire invalide (Préfixe non autorisé).');
         }
 
@@ -198,7 +206,7 @@ class ClientController extends BaseController
             'inclure_frais_retrait' => $inclure ? 1 : 0,
         ]);
 
-        return redirect()->to('/client/dashboard')->with('succes', 'Transfert envoyé avec succès !');
+        return redirect()->to('/client/dashboard')->with('success', 'Transfert envoyé avec succès !');
     }
 
     public function historique()

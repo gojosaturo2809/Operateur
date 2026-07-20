@@ -4,7 +4,7 @@ namespace App\Controllers;
 
 use App\Models\PrefixeModel;
 use App\Models\ClientModel;
-use App\Models\OperateurModel;
+use App\Models\AdministrateurModel;
 
 class AuthController extends BaseController
 {
@@ -72,7 +72,7 @@ class AuthController extends BaseController
                     ->with('erreur', 'Veuillez remplir tous les champs.');
             }
 
-            $operateurModel = new OperateurModel();
+            $operateurModel = new AdministrateurModel();
             $operateur      = $operateurModel->authenticate($nomUtilisateur, $motDePasse);
 
             if (!$operateur) {
@@ -92,7 +92,9 @@ class AuthController extends BaseController
             return redirect()->to(base_url('operateur/dashboard'));
         }
 
-        return view('operateur/login');
+        return view('operateur/login', [
+            'nom_utilisateur' => old('nom_utilisateur'),
+        ]);
     }
 
  

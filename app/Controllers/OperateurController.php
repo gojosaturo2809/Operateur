@@ -2,183 +2,76 @@
 
 namespace App\Controllers;
 
-use App\Models\GainModel;
-use App\Models\ClientModel;
-use App\Models\OperationModel;
-use App\Models\TypeOperationModel;
+use App\Models\OperateurModel;
 use App\Models\PrefixeModel;
 
 class OperateurController extends BaseController
 {
-    private \CodeIgniter\Database\BaseConnection $db;
+    private OperateurModel $operateurModel;
+    private PrefixeModel $prefixeModel;
 
     public function __construct()
     {
-        $this->db = \Config\Database::connect();
+        $this->operateurModel = new OperateurModel();
+        $this->prefixeModel   = new PrefixeModel();
     }
 
     /**
-     * Vue : Situation des gains (Tableau de bord principal)
+     * Page principale de configuration des opérateurs et préfixes (V2)
      */
-    public function index(): string
+    public function configOperateurs()
     {
-        $gainModel = new GainModel();
+        data = [
+            'title'      => 'Configuration Multi-Opérateurs',
+            'operateurs' => $this->operateurModel->findAll(),
+            'prefixes'   => $this->prefixeModel->getPrefixesAvecOperateur()
+        ];
 
-        return view('operateur/gains', [
-            'title'         => 'Situation des gains',
-            'pageTitle'     => 'Situation des gains',
-            'sidebar'       => 'sidebar_operateur',
-            'situationGains'=> $gainModel->getSituationGains(),
-            'gainTotal'     => $gainModel->getGainTotal(),
-        ]);
+        return view('operateur/config_operateurs', data);
     }
 
     /**
-     * Vue : Liste de la situation des comptes clients
+     * Action : Ajouter un nouvel opérateur tiers avec sa commission
      */
-    public function clients(): string
+    public function storeOperateur()
     {
-        $clients = $this->db->table('clients')
-            ->orderBy('id', 'DESC')
-            ->get()->getResultArray();
+        $rules = [
+            'nom'                  => 'required|min_length[2]|is_unique[operateurs.nom]',
+            'commission_inter_pct' => 'required|numeric|greater_than_equal_to[0]'
+        ];
 
-        // Le solde n'est pas une colonne persistée : il dépend des opérations
-        // (dépôts, retraits et transferts reçus/émis). On le calcule donc avec
-        // la même règle que celle utilisée sur le tableau de bord du client.
-        $operationModel = new OperationModel();
-        foreach ($clients as &$client) {
-            $client['solde'] = $operationModel->calculateSolde(
-                (int) $client['id'],
-                (string) $client['numero_telephone']
-            );
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('erreur', 'Données invalides ou opérateur déjà existant.');
         }
-        unset($client);
 
-        return view('operateur/clients', [
-            'title'     => 'Comptes clients',
-            'pageTitle' => 'Comptes clients',
-            'sidebar'   => 'sidebar_operateur',
-            'clients'   => $clients,
+        $this->operateurModel->save([
+            'nom'                  => $this->request->getPost('nom'),
+            'est_principal'        => false, // C'est forcément un autre opérateur
+            'commission_inter_pct' => $this->request->getPost('commission_inter_pct')
         ]);
+
+        return redirect()->to('operateur/config-operateurs')->with('succes', 'Nouvel opérateur configuré avec succès.');
     }
 
-    // =============================================================================
-    // 1. CRUD : PRÉFIXES AUTORISÉS
-    // =============================================================================
-
-    public function prefixes(): string
-    {
-        $prefixes = $this->db->table('prefixes')
-            ->orderBy('prefixe', 'ASC')
-            ->get()->getResultArray();
-
-        return view('operateur/prefixes', [
-            'title'     => 'Gestion des préfixes',
-            'pageTitle' => 'Préfixes autorisés',
-            'sidebar'   => 'sidebar_operateur',
-            'prefixes'  => $prefixes,
-        ]);
-    }
-
+    /**
+     * Action : Associer un préfixe à un opérateur
+     */
     public function storePrefixe()
     {
-        $prefixe = $this->request->getPost('prefixe');
+        $rules = [
+            'prefixe'      => 'required|max_length[5]|is_unique[prefixes.prefixe]',
+            'id_operateur' => 'required|is_not_unique[operateurs.id]'
+        ];
 
-        if (!empty($prefixe)) {
-            $this->db->table('prefixes')->insert([
-                'prefixe' => trim($prefixe)
-            ]);
-            return redirect()->back()->with('success', 'Préfixe ajouté avec succès !');
+        if (!$this->validate($rules)) {
+            return redirect()->back()->withInput()->with('erreur', 'Préfixe déjà configuré ou opérateur inconnu.');
         }
 
-        return redirect()->back()->with('error', 'Le champ préfixe ne peut pas être vide.');
-    }
-
-    public function deletePrefixe(int $id)
-    {
-        $this->db->table('prefixes')->where('id', $id)->delete();
-        return redirect()->back()->with('success', 'Préfixe supprimé avec succès.');
-    }
-
-    // =============================================================================
-    // 2. CRUD : TYPES D'OPÉRATIONS
-    // =============================================================================
-
-    public function typesOperation(): string
-    {
-        $types = $this->db->table('types_operation')
-            ->orderBy('id', 'ASC')
-            ->get()->getResultArray();
-
-        return view('operateur/types_operation', [
-            'title'     => 'Types d\'opérations',
-            'pageTitle' => 'Configuration des opérations',
-            'sidebar'   => 'sidebar_operateur',
-            'types'     => $types,
-        ]);
-    }
-
-    public function storeTypeOperation()
-    {
-        $nom = $this->request->getPost('nom');
-
-        if (!empty($nom)) {
-            $this->db->table('types_operation')->insert([
-                'nom' => strtolower(trim($nom))
-            ]);
-            return redirect()->back()->with('success', 'Type d\'opération créé avec succès.');
-        }
-
-        return redirect()->back()->with('error', 'Le nom du type d\'opération est obligatoire.');
-    }
-
-    public function deleteTypeOperation(int $id)
-    {
-        $this->db->table('types_operation')->where('id', $id)->delete();
-        return redirect()->back()->with('success', 'Type d\'opération retiré avec succès.');
-    }
-
-    // =============================================================================
-    // 3. CRUD : BARÈMES DE FRAIS
-    // =============================================================================
-
-    public function baremes(): string
-    {
-        // Récupération des barèmes combinés avec le libellé de leur type d'opération
-        $baremes = $this->db->table('bareme_frais b')
-            ->select('b.*, t.nom as type_nom')
-            ->join('types_operation t', 't.id = b.id_type_operation')
-            ->orderBy('b.id_type_operation', 'ASC')
-            ->orderBy('b.montant_min', 'ASC')
-            ->get()->getResultArray();
-
-        // Récupération des types d'opérations pour alimenter le select du formulaire
-        $types = $this->db->table('types_operation')->get()->getResultArray();
-
-        return view('operateur/baremes', [
-            'title'     => 'Barèmes des frais',
-            'pageTitle' => 'Barèmes des frais par tranche',
-            'sidebar'   => 'sidebar_operateur',
-            'baremes'   => $baremes,
-            'types'     => $types,
-        ]);
-    }
-
-    public function storeBareme()
-    {
-        $this->db->table('bareme_frais')->insert([
-            'id_type_operation' => (int) $this->request->getPost('id_type_operation'),
-            'montant_min'       => (float) $this->request->getPost('montant_min'),
-            'montant_max'       => (float) $this->request->getPost('montant_max'),
-            'frais'             => (float) $this->request->getPost('frais'),
+        $this->prefixeModel->save([
+            'prefixe'      => $this->request->getPost('prefixe'),
+            'id_operateur' => $this->request->getPost('id_operateur')
         ]);
 
-        return redirect()->back()->with('success', 'Nouvelle règle tarifaire ajoutée au barème !');
-    }
-
-    public function deleteBareme(int $id)
-    {
-        $this->db->table('bareme_frais')->where('id', $id)->delete();
-        return redirect()->back()->with('success', 'Règle tarifaire supprimée du barème.');
+        return redirect()->to('operateur/config-operateurs')->with('succes', 'Préfixe enregistré et lié avec succès.');
     }
 }
