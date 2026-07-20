@@ -8,7 +8,7 @@ class OperationModel extends Model
 {
     protected $table            = 'operations';
     protected $primaryKey       = 'id';
-    protected $allowedFields    = ['id_client', 'id_type_operation', 'numero_destinataire', 'montant', 'frais_applique', 'date_operation'];
+    protected $allowedFields    = ['id_client', 'id_type_operation', 'numero_destinataire', 'montant', 'frais_applique', 'inclure_frais_retrait', 'batch_envoi_multiple', 'date_operation'];
 
     /**
      * Calcule le solde exact du client (Dépôts + Transferts reçus) - (Retraits + Transferts émis + Frais émis)

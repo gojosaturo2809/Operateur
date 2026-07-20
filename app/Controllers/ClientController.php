@@ -120,11 +120,40 @@ class ClientController extends BaseController
 
         $db = db_connect();
         $baremes = $db->query("SELECT montant_min, montant_max, frais FROM bareme_frais WHERE id_type_operation = 3")->getResultArray();
+        $baremesRetrait = $db->query("SELECT montant_min, montant_max, frais FROM bareme_frais WHERE id_type_operation = 2")->getResultArray();
 
         return view('client/transfert', [
             'title'   => 'Faire un Transfert',
-            'baremes' => json_encode($baremes)
+            'baremes' => json_encode($baremes),
+            'baremesRetrait' => json_encode($baremesRetrait)
         ]);
+    }
+
+    public function envoiMultiple()
+    {
+        if (!$this->checkAuth()) return redirect()->to('/login');
+        $baremes = db_connect()->query("SELECT montant_min, montant_max, frais FROM bareme_frais WHERE id_type_operation = 3")->getResultArray();
+        return view('client/envoi_multiple', ['title' => 'Envoi multiple', 'baremes' => json_encode($baremes)]);
+    }
+
+    public function storeEnvoiMultiple()
+    {
+        if (!$this->checkAuth()) return redirect()->to('/login');
+        $montant = (float) str_replace([' ', ','], ['', '.'], (string) $this->request->getPost('montant_global'));
+        $numeros = array_values(array_filter(array_map(fn($n) => preg_replace('/\D+/', '', $n), preg_split('/[\s,;]+/', (string) $this->request->getPost('numeros_bruts')))));
+        if ($montant <= 0 || count($numeros) < 2 || count($numeros) !== count(array_unique($numeros))) return redirect()->back()->withInput()->with('erreur', 'Saisissez un montant positif et au moins deux numéros différents.');
+        $db = db_connect();
+        foreach ($numeros as $numero) {
+            if (strlen($numero) < 3 || !$db->table('prefixes')->where('prefixe', substr($numero, 0, 3))->get()->getRowArray()) return redirect()->back()->withInput()->with('erreur', 'Un numéro contient un préfixe inconnu.');
+        }
+        $part = $montant / count($numeros); $frais = $this->operationModel->getFraisApplicable(3, $part);
+        if ($frais === null) return redirect()->back()->withInput()->with('erreur', 'Montant par personne hors barème.');
+        $id = (int) $this->session->get('client_id'); $tel = (string) $this->session->get('telephone');
+        if ($this->operationModel->calculateSolde($id, $tel) < $montant + $frais * count($numeros)) return redirect()->back()->withInput()->with('erreur', 'Solde insuffisant.');
+        $batch = 'BATCH_EM_' . date('Ymd') . '_' . bin2hex(random_bytes(5)); $db->transStart();
+        foreach ($numeros as $numero) $this->operationModel->insert(['id_client'=>$id,'id_type_operation'=>3,'numero_destinataire'=>$numero,'montant'=>$part,'frais_applique'=>$frais,'batch_envoi_multiple'=>$batch]);
+        $db->transComplete();
+        return $db->transStatus() ? redirect()->to('/client/dashboard')->with('success', 'Envoi multiple effectué.') : redirect()->back()->with('erreur', 'Erreur lors de l’envoi.');
     }
 
     public function storeTransfert()
@@ -133,7 +162,7 @@ class ClientController extends BaseController
 
         $id_client    = $this->session->get('client_id');
         $telephone    = $this->session->get('telephone');
-        $destinataire = (string)$this->request->getPost('numero_destinataire');
+        $destinataire = preg_replace('/\D+/', '', (string)$this->request->getPost('numero_destinataire'));
         $montant      = (float)$this->request->getPost('montant');
 
         if ($destinataire === $telephone) {
@@ -151,8 +180,12 @@ class ClientController extends BaseController
             return redirect()->back()->with('erreur', 'Montant hors limites du barème.');
         }
 
+        $inclure = $this->request->getPost('inclure_frais_retrait') === '1';
+        $fraisRetrait = $inclure ? $this->operationModel->getFraisApplicable(2, $montant) : 0;
+        if ($fraisRetrait === null) return redirect()->back()->with('erreur', 'Montant hors barème de retrait.');
+        $fraisTotal = $frais + $fraisRetrait;
         $soldeActuel = $this->operationModel->calculateSolde($id_client, $telephone);
-        if ($soldeActuel < ($montant + $frais)) {
+        if ($soldeActuel < ($montant + $fraisTotal)) {
             return redirect()->back()->with('erreur', 'Provision insuffisante pour finaliser le transfert.');
         }
 
@@ -161,7 +194,8 @@ class ClientController extends BaseController
             'id_type_operation'  => 3,
             'numero_destinataire'=> $destinataire,
             'montant'            => $montant,
-            'frais_applique'     => $frais
+            'frais_applique'     => $fraisTotal,
+            'inclure_frais_retrait' => $inclure ? 1 : 0,
         ]);
 
         return redirect()->to('/client/dashboard')->with('succes', 'Transfert envoyé avec succès !');

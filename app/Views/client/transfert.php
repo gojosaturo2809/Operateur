@@ -46,6 +46,11 @@
                 >
             </div>
 
+            <div class="form-check mt-3 mb-3">
+                <input class="form-check-input" type="checkbox" value="1" id="inclureFraisRetrait" name="inclure_frais_retrait">
+                <label class="form-check-label" for="inclureFraisRetrait">Inclure les frais de retrait du destinataire</label>
+            </div>
+
             <!-- Montant -->
             <label class="client-field-label" for="montantInput">Montant à envoyer</label>
             <div class="client-amount-wrap">
@@ -98,18 +103,20 @@
 <?= $this->section('scripts') ?>
 <script>
 const baremes  = <?= $baremes ?? '[]' ?>;
+const baremesRetrait = <?= $baremesRetrait ?? '[]' ?>;
 const input    = document.getElementById('montantInput');
 const recapM   = document.getElementById('recapMontant');
 const txtFrais = document.getElementById('txtFrais');
 const txtTotal = document.getElementById('txtTotal');
 const warn     = document.getElementById('warnBareme');
 const btn      = document.getElementById('btnSubmit');
+const inclureRetrait = document.getElementById('inclureFraisRetrait');
 
 function fmt(n) { return n.toLocaleString('fr-FR') + ' Ar'; }
 
 input.addEventListener('input', function () {
     const montant = parseFloat(this.value) || 0;
-    let frais = 0, trouve = false;
+    let frais = 0, fraisRetrait = 0, trouve = false;
 
     if (montant > 0) {
         for (const b of baremes) {
@@ -122,9 +129,14 @@ input.addEventListener('input', function () {
     }
 
     if (montant > 0 && trouve) {
+        if (inclureRetrait.checked) {
+            const retrait = baremesRetrait.find(b => montant >= b.montant_min && montant <= b.montant_max);
+            if (!retrait) { warn.style.display = ''; btn.disabled = true; return; }
+            fraisRetrait = parseFloat(retrait.frais);
+        }
         recapM.textContent   = fmt(montant);
-        txtFrais.textContent = fmt(frais);
-        txtTotal.textContent = fmt(montant + frais);
+        txtFrais.textContent = fmt(frais + fraisRetrait);
+        txtTotal.textContent = fmt(montant + frais + fraisRetrait);
         warn.style.display   = 'none';
         btn.disabled         = false;
     } else if (montant > 0) {
@@ -141,5 +153,6 @@ input.addEventListener('input', function () {
         btn.disabled         = false;
     }
 });
+inclureRetrait.addEventListener('change', () => input.dispatchEvent(new Event('input')));
 </script>
 <?= $this->endSection() ?>

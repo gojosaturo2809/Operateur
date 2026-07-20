@@ -19,13 +19,14 @@ class AuthController extends BaseController
         if ($this->request->is('post')) {
             $telephone = trim((string) $this->request->getPost('numero_telephone'));
 
-            $prefixeModel = new PrefixeModel();
             $clientModel  = new ClientModel();
 
-            // Validation du préfixe
-            if (!$prefixeModel->validerPrefixe($telephone)) {
+            $prefixe = substr(preg_replace('/\D+/', '', $telephone), 0, 3);
+            $principal = db_connect()->table('prefixes p')->join('operateurs op', 'op.id = p.id_operateur')
+                ->where('p.prefixe', $prefixe)->where('op.est_principal', 1)->get()->getRowArray();
+            if ($principal === null) {
                 return redirect()->back()
-                    ->with('erreur', 'Numéro invalide : préfixe non autorisé.');
+                    ->with('erreur', 'Numéro invalide : utilisez un préfixe de notre réseau.');
             }
 
             // Recherche ou création automatique du client
@@ -46,9 +47,10 @@ class AuthController extends BaseController
             return redirect()->to(base_url('client/dashboard'));
         }
 
-        $prefixeModel = new PrefixeModel();
         return view('client/login', [
-            'prefixes' => $prefixeModel->orderBy('prefixe', 'ASC')->findAll(),
+            'prefixes' => db_connect()->table('prefixes p')->select('p.prefixe')
+                ->join('operateurs op', 'op.id = p.id_operateur')->where('op.est_principal', 1)
+                ->orderBy('p.prefixe', 'ASC')->get()->getResultArray(),
         ]);
     }
 
