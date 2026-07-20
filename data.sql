@@ -1,135 +1,209 @@
 -- ============================================================
--- OPERATEURS
+-- DONNEES DE TEST MOBIMONEY
 -- ============================================================
 
-DELETE FROM operateurs WHERE id > 1;
+PRAGMA foreign_keys = ON;
 
-INSERT INTO operateurs (nom, est_principal, commission_inter_pct) VALUES
-('Orange',0,1.50),
-('Airtel',0,2.00),
-('Telma',0,1.75);
 
 -- ============================================================
--- PREFIXES
+-- 1. OPERATEURS
 -- ============================================================
 
-INSERT INTO prefixes(prefixe,id_operateur) VALUES
-('033',1),
-('037',1),
-
-('032',2),
-('038',2),
-
-('034',3),
-
-('039',4);
-
--- ============================================================
--- CLIENTS
--- ============================================================
-
-INSERT INTO clients(numero_telephone) VALUES
-('0331234567'),
-('0339876543'),
-('0371111111'),
-('0372222222'),
-('0333333333'),
-('0374444444'),
-('0335555555'),
-('0376666666'),
-('0337777777'),
-('0378888888');
-
--- ============================================================
--- BAREME DES FRAIS
--- ============================================================
-
--- dépôt
-
-INSERT INTO bareme_frais(id_type_operation,montant_min,montant_max,frais)
+INSERT INTO operateurs (nom, est_principal, commission_inter_pct)
 VALUES
-(1,0,50000,0),
-(1,50001,100000,0),
-(1,100001,99999999,0);
+('MobiMoney', 1, 0.00),
+('Telma Money', 0, 2.50),
+('Orange Money', 0, 3.00),
+('Airtel Money', 0, 2.00);
 
--- retrait
-
-INSERT INTO bareme_frais(id_type_operation,montant_min,montant_max,frais)
-VALUES
-(2,0,10000,200),
-(2,10001,50000,500),
-(2,50001,100000,1000),
-(2,100001,99999999,2000);
-
--- transfert
-
-INSERT INTO bareme_frais(id_type_operation,montant_min,montant_max,frais)
-VALUES
-(3,0,10000,150),
-(3,10001,50000,400),
-(3,50001,100000,800),
-(3,100001,99999999,1500);
 
 -- ============================================================
--- OPERATIONS
+-- 2. PREFIXES
 -- ============================================================
+
+-- Réseau principal MobiMoney
+INSERT INTO prefixes(prefixe, id_operateur)
+VALUES
+('033', 1),
+('034', 1);
+
+-- Réseaux tiers
+INSERT INTO prefixes(prefixe, id_operateur)
+VALUES
+('038', 2),
+('032', 3),
+('037', 4);
+
+
+-- ============================================================
+-- 3. TYPES OPERATIONS
+-- ============================================================
+
+INSERT INTO types_operation(nom)
+VALUES
+('depot'),
+('retrait'),
+('transfert');
+
+
+-- ============================================================
+-- 4. BAREMES FRAIS
+-- ============================================================
+
+-- Dépôt
+INSERT INTO bareme_frais
+(id_type_operation,montant_min,montant_max,frais)
+VALUES
+(1,0,10000,200),
+(1,10001,50000,500),
+(1,50001,200000,1000);
+
+
+-- Retrait
+INSERT INTO bareme_frais
+(id_type_operation,montant_min,montant_max,frais)
+VALUES
+(2,0,10000,300),
+(2,10001,50000,800),
+(2,50001,200000,1500);
+
+
+-- Transfert
+INSERT INTO bareme_frais
+(id_type_operation,montant_min,montant_max,frais)
+VALUES
+(3,0,10000,500),
+(3,10001,50000,1000),
+(3,50001,200000,2000);
+
+
+
+-- ============================================================
+-- 5. CLIENTS
+-- ============================================================
+
+INSERT INTO clients(numero_telephone)
+VALUES
+('0331200001'),
+('0342200002'),
+('0383300003'),
+('0324400004'),
+('0375500005'),
+('0336600006');
+
+
+-- ============================================================
+-- 6. OPERATIONS
+-- ============================================================
+
+
+-- ======================
+-- DEPOTS
+-- ======================
 
 INSERT INTO operations
-(id_client,id_type_operation,numero_destinataire,montant,frais_applique,date_operation)
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
 VALUES
 
--- DEPOTS
+(1,1,NULL,5000,200),
+(2,1,NULL,25000,500),
+(3,1,NULL,100000,1000);
 
-(1,1,NULL,10000,0,'2026-01-10'),
-(2,1,NULL,25000,0,'2026-01-15'),
-(3,1,NULL,50000,0,'2026-02-02'),
-(4,1,NULL,100000,0,'2026-02-10'),
-(5,1,NULL,20000,0,'2026-03-01'),
-(6,1,NULL,30000,0,'2026-03-12'),
-(7,1,NULL,150000,0,'2026-04-05'),
-(8,1,NULL,60000,0,'2026-05-09'),
-(9,1,NULL,120000,0,'2026-06-11'),
-(10,1,NULL,5000,0,'2026-07-02'),
 
+-- ======================
 -- RETRAITS
+-- ======================
 
-(1,2,NULL,5000,200,'2026-01-12'),
-(2,2,NULL,10000,200,'2026-01-18'),
-(3,2,NULL,25000,500,'2026-02-05'),
-(4,2,NULL,40000,500,'2026-02-15'),
-(5,2,NULL,70000,1000,'2026-03-08'),
-(6,2,NULL,150000,2000,'2026-03-28'),
-(7,2,NULL,9000,200,'2026-04-09'),
-(8,2,NULL,55000,1000,'2026-05-18'),
-(9,2,NULL,100000,1000,'2026-06-15'),
-(10,2,NULL,200000,2000,'2026-07-12'),
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
 
--- TRANSFERTS LOCAUX
+(1,2,NULL,10000,300),
+(2,2,NULL,40000,800),
+(3,2,NULL,80000,1500),
+(4,2,NULL,150000,1500);
 
-(1,3,'0339999999',15000,400,'2026-01-20'),
-(2,3,'0378888888',25000,400,'2026-01-25'),
-(3,3,'0337777777',70000,800,'2026-02-20'),
-(4,3,'0376666666',120000,1500,'2026-03-03'),
-(5,3,'0335555555',9000,150,'2026-03-15'),
-(6,3,'0374444444',45000,400,'2026-04-01'),
-(7,3,'0332222222',50000,400,'2026-04-15'),
-(8,3,'0371234567',100000,800,'2026-05-21'),
 
--- TRANSFERTS ORANGE
 
-(1,3,'0321234567',20000,400,'2026-05-25'),
-(2,3,'0387654321',80000,800,'2026-05-28'),
-(3,3,'0325555555',150000,1500,'2026-06-02'),
+-- ======================
+-- TRANSFERT LOCAL
+-- destinataire MobiMoney
+-- préfixes 033 / 034
+-- ======================
 
--- TRANSFERTS AIRTEL
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
 
-(4,3,'0341234567',18000,400,'2026-06-08'),
-(5,3,'0347654321',40000,400,'2026-06-18'),
-(6,3,'0349999999',130000,1500,'2026-06-24'),
+(1,3,'0337700007',5000,500),
 
--- TRANSFERTS TELMA
+(2,3,'0348800008',25000,1000),
 
-(7,3,'0391234567',35000,400,'2026-07-01'),
-(8,3,'0392222222',65000,800,'2026-07-05'),
-(9,3,'0393333333',100000,800,'2026-07-10'),
-(10,3,'0394444444',180000,1500,'2026-07-15');
+(6,3,'0339900009',75000,2000);
+
+
+
+-- ======================
+-- TRANSFERT INTER OPERATEURS
+-- Telma 038
+-- ======================
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(1,3,'0381100011',10000,500),
+
+(2,3,'0382200022',50000,1000);
+
+
+
+-- Orange 032
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(3,3,'0323300033',20000,1000),
+
+(4,3,'0324400044',100000,2000);
+
+
+
+-- Airtel 037
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(5,3,'0375500055',15000,500),
+
+(6,3,'0376600066',80000,2000);
+
+
+
+-- ======================
+-- TRANSFERT VERS PREFIXE INCONNU
+-- ======================
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(1,3,'0399900000',30000,1000);
+
+
+
+-- ============================================================
+-- VERIFICATIONS
+-- ============================================================
+
+SELECT * FROM vue_situation_gains;
+
+SELECT * FROM vue_gains_local;
+
+SELECT * FROM vue_gains_inter;
+
+SELECT * FROM vue_gains_inter_inconnus;
+
+SELECT * FROM vue_compensation_operateurs;
