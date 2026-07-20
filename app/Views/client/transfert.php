@@ -1,66 +1,145 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"><title>MobiMoney - Transfert</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-</head>
-<body class="bg-light py-5">
-<div class="container" style="max-width: 500px;">
-    <div class="card shadow border-0 rounded-4">
-        <div class="card-body p-4">
-            <a href="<?= base_url('client/dashboard') ?>" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Retour</a>
-            <h4 class="fw-bold mt-3 mb-4 text-info"><i class="bi bi-send me-2"></i>Transférer de l'argent</h4>
-            
-            <?php if (session()->getFlashdata('erreur')): ?>
-                <div class="alert alert-danger py-2 small"><?= esc(session()->getFlashdata('erreur')) ?></div>
-            <?php endif; ?>
+<?= $this->extend('layouts/client') ?>
 
-            <form method="post" action="<?= base_url('client/store-transfert') ?>">
-                <?= csrf_field() ?>
-                <div class="mb-3">
-                    <label class="form-label small">Numéro du destinataire</label>
-                    <input type="text" name="numero_destinataire" class="form-control" placeholder="Ex: 033xx xxx xx" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small">Montant à envoyer (Ar)</label>
-                    <input type="number" id="montantInput" name="montant" class="form-control text-center fw-bold" placeholder="0.00" required>
-                </div>
+<?= $this->section('content') ?>
 
-                <div class="bg-light p-3 rounded-3 mb-4 border text-secondary small">
-                    <div class="d-flex justify-content-between mb-1"><span>Frais d'envoi :</span> <span class="fw-bold text-dark" id="txtFrais">0 Ar</span></div>
-                    <div class="d-flex justify-content-between border-top pt-2"><span>Coût global de l'opération :</span> <span class="fw-bold text-info fs-6" id="txtTotal">0 Ar</span></div>
-                </div>
+<a href="<?= base_url('client/dashboard') ?>" class="client-back">
+    <i class="bi bi-arrow-left"></i> Retour
+</a>
 
-                <button class="btn btn-info text-white btn-lg w-100 rounded-3">Envoyer maintenant</button>
-            </form>
+<div class="client-form-card">
+
+    <div class="client-form-header">
+        <span class="client-form-icon" style="background:#eff6ff;color:#3b82f6;">
+            <i class="bi bi-send"></i>
+        </span>
+        <div>
+            <p class="client-form-title">Transfert</p>
+            <p class="client-form-sub">Envoyer de l'argent — frais selon barème</p>
         </div>
+    </div>
+
+    <div class="client-form-body">
+
+        <?php if (session()->getFlashdata('erreur')): ?>
+        <div class="client-error">
+            <i class="bi bi-exclamation-circle-fill"></i>
+            <?= esc(session()->getFlashdata('erreur')) ?>
+        </div>
+        <?php endif; ?>
+
+        <form method="post" action="<?= base_url('client/store-transfert') ?>">
+            <?= csrf_field() ?>
+
+            <!-- Destinataire -->
+            <label class="client-field-label" for="numero_destinataire">Numéro du destinataire</label>
+            <div class="client-input-wrap">
+                <i class="bi bi-phone"></i>
+                <input
+                    type="tel"
+                    id="numero_destinataire"
+                    name="numero_destinataire"
+                    class="client-input"
+                    placeholder="Ex : 033 12 345 67"
+                    autocomplete="tel"
+                    inputmode="tel"
+                    required
+                >
+            </div>
+
+            <!-- Montant -->
+            <label class="client-field-label" for="montantInput">Montant à envoyer</label>
+            <div class="client-amount-wrap">
+                <input
+                    type="number"
+                    id="montantInput"
+                    name="montant"
+                    class="client-amount-input"
+                    placeholder="0"
+                    min="100"
+                    step="100"
+                    inputmode="numeric"
+                    required
+                >
+                <span class="client-amount-unit">Ar</span>
+            </div>
+
+            <!-- Récapitulatif frais -->
+            <div class="client-recap">
+                <div class="client-recap-row">
+                    <span>Montant envoyé</span>
+                    <span id="recapMontant" style="color:#64748b;">—</span>
+                </div>
+                <div class="client-recap-row">
+                    <span>Frais d'envoi</span>
+                    <span id="txtFrais" style="color:#f59e0b;font-weight:600;">—</span>
+                </div>
+                <div class="client-recap-row client-recap-total">
+                    <span>Total opération</span>
+                    <span id="txtTotal" style="color:#3b82f6;">—</span>
+                </div>
+            </div>
+
+            <div id="warnBareme" class="client-warn" style="display:none;">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Montant hors barème — transfert indisponible.
+            </div>
+
+            <button type="submit" id="btnSubmit" class="client-btn" style="background:#3b82f6;">
+                <i class="bi bi-send-fill"></i>
+                Envoyer maintenant
+            </button>
+        </form>
+
     </div>
 </div>
 
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
 <script>
-    const baremes = <?= $baremes ?>;
-    const montantInput = document.getElementById('montantInput');
-    const txtFrais = document.getElementById('txtFrais');
-    const txtTotal = document.getElementById('txtTotal');
+const baremes  = <?= $baremes ?? '[]' ?>;
+const input    = document.getElementById('montantInput');
+const recapM   = document.getElementById('recapMontant');
+const txtFrais = document.getElementById('txtFrais');
+const txtTotal = document.getElementById('txtTotal');
+const warn     = document.getElementById('warnBareme');
+const btn      = document.getElementById('btnSubmit');
 
-    montantInput.addEventListener('input', function() {
-        const montant = parseFloat(this.value) || 0;
-        let frais = 0;
-        let trouve = false;
+function fmt(n) { return n.toLocaleString('fr-FR') + ' Ar'; }
 
-        if(montant > 0) {
-            for (let b of baremes) {
-                if (montant >= b.montant_min && montant <= b.montant_max) {
-                    frais = parseFloat(b.frais);
-                    trouve = true;
-                    break;
-                }
+input.addEventListener('input', function () {
+    const montant = parseFloat(this.value) || 0;
+    let frais = 0, trouve = false;
+
+    if (montant > 0) {
+        for (const b of baremes) {
+            if (montant >= b.montant_min && montant <= b.montant_max) {
+                frais = parseFloat(b.frais);
+                trouve = true;
+                break;
             }
         }
-        txtFrais.innerText = trouve ? `${frais.toLocaleString('fr-FR')} Ar` : "Hors barème";
-        txtTotal.innerText = trouve ? `${(montant + frais).toLocaleString('fr-FR')} Ar` : "0 Ar";
-    });
+    }
+
+    if (montant > 0 && trouve) {
+        recapM.textContent   = fmt(montant);
+        txtFrais.textContent = fmt(frais);
+        txtTotal.textContent = fmt(montant + frais);
+        warn.style.display   = 'none';
+        btn.disabled         = false;
+    } else if (montant > 0) {
+        recapM.textContent   = fmt(montant);
+        txtFrais.textContent = 'Hors barème';
+        txtTotal.textContent = '—';
+        warn.style.display   = '';
+        btn.disabled         = true;
+    } else {
+        recapM.textContent   = '—';
+        txtFrais.textContent = '—';
+        txtTotal.textContent = '—';
+        warn.style.display   = 'none';
+        btn.disabled         = false;
+    }
+});
 </script>
-</body>
-</html>
+<?= $this->endSection() ?>

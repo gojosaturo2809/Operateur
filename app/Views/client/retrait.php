@@ -1,64 +1,128 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"><title>MobiMoney - Retrait</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-</head>
-<body class="bg-light py-5">
-<div class="container" style="max-width: 500px;">
-    <div class="card shadow border-0 rounded-4">
-        <div class="card-body p-4">
-            <a href="<?= base_url('client/dashboard') ?>" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Retour</a>
-            <h4 class="fw-bold mt-3 mb-4 text-danger"><i class="bi bi-arrow-up-right-circle me-2"></i>Retrait en Agence</h4>
-            
-            <?php if (session()->getFlashdata('erreur')): ?>
-                <div class="alert alert-danger py-2 small"><?= esc(session()->getFlashdata('erreur')) ?></div>
-            <?php endif; ?>
+<?= $this->extend('layouts/client') ?>
 
-            <form method="post" action="<?= base_url('client/store-retrait') ?>">
-                <?= csrf_field() ?>
-                <div class="mb-3">
-                    <label class="form-label small">Montant à retirer (Ar)</label>
-                    <input type="number" id="montantInput" name="montant" class="form-control form-control-lg text-center fw-bold text-danger" placeholder="0.00" required>
-                </div>
+<?= $this->section('content') ?>
 
-                <!-- Panneau d'informations Dynamiques en JS -->
-                <div class="bg-light p-3 rounded-3 mb-4 border text-secondary small">
-                    <div class="d-flex justify-content-between mb-1"><span>Frais appliqués :</span> <span class="fw-bold text-dark" id="txtFrais">0 Ar</span></div>
-                    <div class="d-flex justify-content-between border-top pt-2"><span>Total débité :</span> <span class="fw-bold text-danger fs-6" id="txtTotal">0 Ar</span></div>
-                </div>
+<a href="<?= base_url('client/dashboard') ?>" class="client-back">
+    <i class="bi bi-arrow-left"></i> Retour
+</a>
 
-                <button class="btn btn-danger btn-lg w-100 rounded-3">Valider le Retrait</button>
-            </form>
+<div class="client-form-card">
+
+    <div class="client-form-header">
+        <span class="client-form-icon" style="background:#fef2f2;color:#ef4444;">
+            <i class="bi bi-arrow-up-right-circle"></i>
+        </span>
+        <div>
+            <p class="client-form-title">Retrait</p>
+            <p class="client-form-sub">Retrait en agence — frais selon barème</p>
         </div>
+    </div>
+
+    <div class="client-form-body">
+
+        <?php if (session()->getFlashdata('erreur')): ?>
+        <div class="client-error">
+            <i class="bi bi-exclamation-circle-fill"></i>
+            <?= esc(session()->getFlashdata('erreur')) ?>
+        </div>
+        <?php endif; ?>
+
+        <form method="post" action="<?= base_url('client/store-retrait') ?>">
+            <?= csrf_field() ?>
+
+            <label class="client-field-label" for="montantInput">Montant à retirer</label>
+            <div class="client-amount-wrap">
+                <input
+                    type="number"
+                    id="montantInput"
+                    name="montant"
+                    class="client-amount-input"
+                    placeholder="0"
+                    min="100"
+                    step="100"
+                    inputmode="numeric"
+                    required
+                >
+                <span class="client-amount-unit">Ar</span>
+            </div>
+
+            <!-- Récapitulatif frais -->
+            <div class="client-recap">
+                <div class="client-recap-row">
+                    <span>Montant retiré</span>
+                    <span id="recapMontant" style="color:#64748b;">—</span>
+                </div>
+                <div class="client-recap-row">
+                    <span>Frais appliqués</span>
+                    <span id="txtFrais" style="color:#f59e0b;font-weight:600;">—</span>
+                </div>
+                <div class="client-recap-row client-recap-total">
+                    <span>Total débité</span>
+                    <span id="txtTotal" style="color:#ef4444;">—</span>
+                </div>
+            </div>
+
+            <div id="warnBareme" class="client-warn" style="display:none;">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Montant hors barème — opération indisponible.
+            </div>
+
+            <button type="submit" id="btnSubmit" class="client-btn" style="background:#ef4444;">
+                <i class="bi bi-check-circle-fill"></i>
+                Valider le retrait
+            </button>
+        </form>
+
     </div>
 </div>
 
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
 <script>
-    const baremes = <?= $baremes ?>;
-    const montantInput = document.getElementById('montantInput');
-    const txtFrais = document.getElementById('txtFrais');
-    const txtTotal = document.getElementById('txtTotal');
+const baremes  = <?= $baremes ?? '[]' ?>;
+const input    = document.getElementById('montantInput');
+const recapM   = document.getElementById('recapMontant');
+const txtFrais = document.getElementById('txtFrais');
+const txtTotal = document.getElementById('txtTotal');
+const warn     = document.getElementById('warnBareme');
+const btn      = document.getElementById('btnSubmit');
 
-    montantInput.addEventListener('input', function() {
-        const montant = parseFloat(this.value) || 0;
-        let frais = 0;
-        let trouve = false;
+function fmt(n) { return n.toLocaleString('fr-FR') + ' Ar'; }
 
-        if(montant > 0) {
-            for (let b of baremes) {
-                if (montant >= b.montant_min && montant <= b.montant_max) {
-                    frais = parseFloat(b.frais);
-                    trouve = true;
-                    break;
-                }
+input.addEventListener('input', function () {
+    const montant = parseFloat(this.value) || 0;
+    let frais = 0, trouve = false;
+
+    if (montant > 0) {
+        for (const b of baremes) {
+            if (montant >= b.montant_min && montant <= b.montant_max) {
+                frais = parseFloat(b.frais);
+                trouve = true;
+                break;
             }
         }
+    }
 
-        txtFrais.innerText = trouve ? `${frais.toLocaleString('fr-FR')} Ar` : "Hors barème (Indisponible)";
-        txtTotal.innerText = trouve ? `${(montant + frais).toLocaleString('fr-FR')} Ar` : "0 Ar";
-    });
+    if (montant > 0 && trouve) {
+        recapM.textContent  = fmt(montant);
+        txtFrais.textContent = fmt(frais);
+        txtTotal.textContent = fmt(montant + frais);
+        warn.style.display  = 'none';
+        btn.disabled        = false;
+    } else if (montant > 0) {
+        recapM.textContent  = fmt(montant);
+        txtFrais.textContent = 'Hors barème';
+        txtTotal.textContent = '—';
+        warn.style.display  = '';
+        btn.disabled        = true;
+    } else {
+        recapM.textContent  = '—';
+        txtFrais.textContent = '—';
+        txtTotal.textContent = '—';
+        warn.style.display  = 'none';
+        btn.disabled        = false;
+    }
+});
 </script>
-</body>
-</html>
+<?= $this->endSection() ?>
