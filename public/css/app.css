@@ -1,0 +1,41 @@
+:root {
+    --sidebar-width: 240px;
+}
+
+body {
+    background-color: #f4f6f9;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+}
+
+.sidebar .nav-link {
+    color: rgba(255,255,255,.75);
+    border-radius: .4rem;
+    padding: .55rem .75rem;
+    font-size: .92rem;
+}
+
+.sidebar .nav-link:hover {
+    color: #fff;
+    background: rgba(255,255,255,.08);
+}
+
+.sidebar .nav-link.active {
+    color: #fff;
+    background: rgba(255,255,255,.18);
+    font-weight: 600;
+}
+
+.content-wrapper {
+    min-height: 100vh;
+}
+
+.card {
+    border-radius: .6rem;
+}
