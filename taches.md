@@ -120,13 +120,13 @@ GROUP BY t.nom;
     - [ok] [10minute] **Base** : Insertion dans les tables `operateurs` (ex: Telma, Orange) et liaison des préfixes associés (034, 032...)
     - [ok] [15minute] **Integration** : Formulaire de gestion de la commission en % par opérateur tiers
 - **Séparation des gains (Opérateur Principal vs Autres)**
-    - [ ] [15minute] **Page** : `app/Views/operateur/gains.php` (Mise à jour)
-    - [ ] [20minute] **Fonction** : `AdminOperateurController::gainsSynthese()`
-    - [ ] [20minute] **Base** : Modification SQL pour séparer les calculs selon le flag `est_principal` de l'opérateur de destination
-    - [ ] [15minute] **Integration** : Refonte de l'interface avec deux blocs distincts : "Gains Réseau Local" et "Commissions Inter-Opérateurs"
+    - [ok] [15minute] **Page** : `app/Views/operateur/gains.php` (Mise à jour)
+    - [ok] [20minute] **Fonction** : `AdminOperateurController::gainsSynthese()`
+    - [ok] [20minute] **Base** : Modification SQL pour séparer les calculs selon le flag `est_principal` de l'opérateur de destination
+    - [ ok] [15minute] **Integration** : Refonte de l'interface avec deux blocs distincts : "Gains Réseau Local" et "Commissions Inter-Opérateurs"
 - **Situation des montants à envoyer (Compensation / Clearing)**
-    - [ ] [15minute] **Page** : `app/Views/operateur/compensation.php`
-    - [ ] [15minute] **Fonction** : `AdminOperateurController::compensation()`
+    - [ok] [15minute] **Page** : `app/Views/operateur/compensation.php`
+    - [ok] [15minute] **Fonction** : `AdminOperateurController::compensation()`
     - [ ] [15minute] **Base** : Agrégation des montants nets (`SUM(montant)`) transférés vers chaque opérateur tiers (`est_principal = FALSE`)
     - [ ] [15minute] **Integration** : Tableau récapitulatif des balances financières à reverser à chaque entité externe
 

@@ -85,23 +85,24 @@ GROUP BY t.nom;
 -- Retraits + transferts dont le destinataire est sur notre réseau principal
 CREATE VIEW vue_gains_local AS
 SELECT
-    t.nom                       AS type_operation,
-    COUNT(o.id)                 AS volume_transactions,
+    t.nom AS type_operation,
+    COUNT(o.id) AS volume_transactions,
     COALESCE(SUM(o.montant), 0) AS volume_financier,
     COALESCE(SUM(o.frais_applique), 0) AS total_gains
 FROM operations o
-JOIN types_operation t ON o.id_type_operation = t.id
+JOIN types_operation t
+    ON o.id_type_operation = t.id
+LEFT JOIN prefixes p
+    ON p.prefixe = substr(o.numero_destinataire, 1, 3)
+LEFT JOIN operateurs op
+    ON p.id_operateur = op.id
 WHERE
     t.nom = 'retrait'
     OR (
         t.nom = 'transfert'
         AND (
             o.numero_destinataire IS NULL
-            OR substr(o.numero_destinataire, 1, 3) IN (
-                SELECT p.prefixe FROM prefixes p
-                JOIN operateurs op ON p.id_operateur = op.id
-                WHERE op.est_principal = 1
-            )
+            OR op.est_principal = 1
         )
     )
 GROUP BY t.nom;
@@ -110,44 +111,93 @@ GROUP BY t.nom;
 -- Transferts vers des réseaux tiers enregistrés
 CREATE VIEW vue_gains_inter AS
 SELECT
-    op.nom                            AS operateur_tiers,
+    op.id AS operateur_id,
+    op.nom AS operateur_tiers,
     op.commission_inter_pct,
-    COUNT(o.id)                       AS volume_transactions,
-    COALESCE(SUM(o.montant), 0)       AS volume_financier,
-    COALESCE(SUM(o.frais_applique), 0) AS total_gains
+    COUNT(o.id) AS volume_transactions,
+    COALESCE(SUM(o.montant),0) AS volume_financier,
+    COALESCE(SUM(o.frais_applique),0) AS total_gains
 FROM operations o
-JOIN types_operation t   ON o.id_type_operation = t.id
-JOIN prefixes p          ON p.prefixe = substr(o.numero_destinataire, 1, 3)
-JOIN operateurs op       ON p.id_operateur = op.id
+JOIN types_operation t
+    ON o.id_type_operation = t.id
+JOIN prefixes p
+    ON p.prefixe = substr(o.numero_destinataire,1,3)
+JOIN operateurs op
+    ON p.id_operateur = op.id
 WHERE
     t.nom = 'transfert'
-    AND o.numero_destinataire IS NOT NULL
     AND op.est_principal = 0
 GROUP BY op.id;
 
--- ============================================================
---  DONNÉES INITIALES
--- ============================================================
+CREATE VIEW vue_gains_inter_inconnus AS
+SELECT
+    COUNT(o.id) AS volume_transactions,
+    COALESCE(SUM(o.montant),0) AS volume_financier,
+    COALESCE(SUM(o.frais_applique),0) AS total_gains
+FROM operations o
+JOIN types_operation t
+    ON o.id_type_operation = t.id
+WHERE
+    t.nom = 'transfert'
+    AND o.numero_destinataire IS NOT NULL
+    AND substr(o.numero_destinataire,1,3) NOT IN
+    (
+        SELECT prefixe
+        FROM prefixes
+    );
 
--- Types d'opérations de base
-INSERT INTO types_operation (nom) VALUES ('depot'), ('retrait'), ('transfert');
-
--- Opérateur principal (notre réseau)
-INSERT INTO operateurs (nom, est_principal, commission_inter_pct)
-VALUES ('MonRéseau', 1, 0.00);
-
--- Exemple d'opérateurs tiers
--- INSERT INTO operateurs (nom, est_principal, commission_inter_pct)
--- VALUES ('Orange', 0, 1.50), ('Airtel', 0, 2.00), ('Telma', 0, 1.75);
-
--- Préfixes de notre réseau (id_operateur = 1)
--- INSERT INTO prefixes (prefixe, id_operateur) VALUES ('033', 1), ('037', 1);
-
--- Administrateur par défaut : admin / password
--- Hash : password_hash('password', PASSWORD_BCRYPT)
 INSERT INTO administrateurs (nom_utilisateur, mot_de_passe_hash)
 VALUES (
     'admin',
     '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
 );
 -- Remplacer par : php -r "echo password_hash('votre_mdp', PASSWORD_BCRYPT);"
+
+CREATE VIEW vue_compensation_operateurs AS
+SELECT
+
+op.id AS operateur_id,
+
+op.nom AS operateur_nom,
+
+op.commission_inter_pct,
+
+COUNT(o.id) AS nb_transferts,
+
+SUM(o.montant) AS montant_transfere,
+
+SUM(
+o.montant*op.commission_inter_pct/100.0
+)
+
+AS commission_a_reverser,
+
+SUM(o.frais_applique)
+
+AS frais_percus,
+
+MIN(o.date_operation)
+
+AS premiere_operation,
+
+MAX(o.date_operation)
+
+AS derniere_operation
+
+FROM operations o
+
+JOIN types_operation t
+ON t.id=o.id_type_operation
+
+JOIN prefixes p
+ON p.prefixe=substr(o.numero_destinataire,1,3)
+
+JOIN operateurs op
+ON op.id=p.id_operateur
+
+WHERE
+
+t.nom='transfert'
+AND op.est_principal=0
+
+GROUP BY op.id;

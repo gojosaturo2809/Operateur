@@ -39,134 +39,123 @@ class GainModel extends Model
     // Retraits (toujours locaux) + transferts dont le destinataire
     // possède un préfixe appartenant à l'opérateur PRINCIPAL.
 
-    public function getGainsLocal(): array
-    {
-        $db = \Config\Database::connect();
+   public function getGainsLocal(): array
+{
+    return $this->db
+        ->table('vue_gains_local')
+        ->get()
+        ->getResultArray();
+}
 
-        return $db->query("
-            SELECT
-                t.nom                         AS type_operation,
-                COUNT(o.id)                   AS volume_transactions,
-                COALESCE(SUM(o.montant), 0)   AS volume_financier,
-                COALESCE(SUM(o.frais_applique), 0) AS total_gains
-            FROM operations o
-            JOIN types_operation t ON o.id_type_operation = t.id
-            WHERE
-                t.nom = 'retrait'
-                OR (
-                    t.nom = 'transfert'
-                    AND (
-                        o.numero_destinataire IS NULL
-                        OR substr(o.numero_destinataire, 1, 3) IN (
-                            SELECT p.prefixe
-                            FROM prefixes p
-                            JOIN operateurs op ON p.id_operateur = op.id
-                            WHERE op.est_principal = 1
-                        )
-                    )
-                )
-            GROUP BY t.nom
-            ORDER BY t.nom
-        ")->getResultArray();
-    }
+   public function getTotalGainsLocal(): float
+{
+    $row = $this->db
+        ->table('vue_gains_local')
+        ->selectSum('total_gains', 'total')
+        ->get()
+        ->getRowArray();
 
-    public function getTotalGainsLocal(): float
-    {
-        $db = \Config\Database::connect();
-
-        $row = $db->query("
-            SELECT COALESCE(SUM(o.frais_applique), 0) AS total
-            FROM operations o
-            JOIN types_operation t ON o.id_type_operation = t.id
-            WHERE
-                t.nom = 'retrait'
-                OR (
-                    t.nom = 'transfert'
-                    AND (
-                        o.numero_destinataire IS NULL
-                        OR substr(o.numero_destinataire, 1, 3) IN (
-                            SELECT p.prefixe
-                            FROM prefixes p
-                            JOIN operateurs op ON p.id_operateur = op.id
-                            WHERE op.est_principal = 1
-                        )
-                    )
-                )
-        ")->getRowArray();
-
-        return (float) ($row['total'] ?? 0);
-    }
-
+    return (float) ($row['total'] ?? 0);
+}
     // ── Commissions Inter-Opérateurs ──────────────────────────────────────────
     // Transferts dont le destinataire est sur un réseau TIERS
     // (préfixe absent des préfixes de l'opérateur principal).
 
-    public function getGainsInter(): array
-    {
-        $db = \Config\Database::connect();
-
-        return $db->query("
-            SELECT
-                op.nom                            AS operateur_tiers,
-                op.commission_inter_pct,
-                COUNT(o.id)                       AS volume_transactions,
-                COALESCE(SUM(o.montant), 0)       AS volume_financier,
-                COALESCE(SUM(o.frais_applique), 0) AS total_gains
-            FROM operations o
-            JOIN types_operation t   ON o.id_type_operation = t.id
-            JOIN prefixes p          ON p.prefixe = substr(o.numero_destinataire, 1, 3)
-            JOIN operateurs op       ON p.id_operateur = op.id
-            WHERE
-                t.nom = 'transfert'
-                AND o.numero_destinataire IS NOT NULL
-                AND op.est_principal = 0
-            GROUP BY op.id
-            ORDER BY total_gains DESC
-        ")->getResultArray();
-    }
+   public function getGainsInter(): array
+{
+    return $this->db
+        ->table('vue_gains_inter')
+        ->orderBy('total_gains', 'DESC')
+        ->get()
+        ->getResultArray();
+}
 
     /**
      * Transferts vers des préfixes totalement inconnus (ni local, ni tiers enregistré).
      */
-    public function getGainsInterInconnus(): array
-    {
-        $db = \Config\Database::connect();
+   public function getGainsInterInconnus(): array
+{
+    return $this->db
+        ->table('vue_gains_inter_inconnus')
+        ->get()
+        ->getRowArray();
+}
+   public function getTotalGainsInter(): float
+{
+    $db = \Config\Database::connect();
 
-        return $db->query("
-            SELECT
-                COUNT(o.id)                       AS volume_transactions,
-                COALESCE(SUM(o.montant), 0)       AS volume_financier,
-                COALESCE(SUM(o.frais_applique), 0) AS total_gains
-            FROM operations o
-            JOIN types_operation t ON o.id_type_operation = t.id
-            WHERE
-                t.nom = 'transfert'
-                AND o.numero_destinataire IS NOT NULL
-                AND substr(o.numero_destinataire, 1, 3) NOT IN (
-                    SELECT prefixe FROM prefixes
-                )
-        ")->getRowArray();
-    }
+    $connus = $db->table('vue_gains_inter')
+                 ->selectSum('total_gains', 'total')
+                 ->get()
+                 ->getRowArray();
 
-    public function getTotalGainsInter(): float
-    {
-        $db = \Config\Database::connect();
+    $inconnus = $db->table('vue_gains_inter_inconnus')
+                   ->get()
+                   ->getRowArray();
 
-        $row = $db->query("
-            SELECT COALESCE(SUM(o.frais_applique), 0) AS total
-            FROM operations o
-            JOIN types_operation t ON o.id_type_operation = t.id
-            WHERE
-                t.nom = 'transfert'
-                AND o.numero_destinataire IS NOT NULL
-                AND substr(o.numero_destinataire, 1, 3) NOT IN (
-                    SELECT p.prefixe
-                    FROM prefixes p
-                    JOIN operateurs op ON p.id_operateur = op.id
-                    WHERE op.est_principal = 1
-                )
-        ")->getRowArray();
+    return (float)($connus['total'] ?? 0)
+         + (float)($inconnus['total_gains'] ?? 0);
+}
 
-        return (float) ($row['total'] ?? 0);
-    }
+
+   public function getCompensationParOperateur(): array
+{
+    return $this->db
+        ->table('vue_compensation_operateurs')
+        ->orderBy('commission_a_reverser', 'DESC')
+        ->get()
+        ->getResultArray();
+}
+
+public function getTotalCompensation(): float
+{
+    $row = $this->db
+        ->table('vue_compensation_operateurs')
+        ->selectSum('commission_a_reverser', 'total')
+        ->get()
+        ->getRowArray();
+
+    return (float)($row['total'] ?? 0);
+}
+
+public function getTotalMontantTransfere(): float
+{
+    $row = $this->db
+        ->table('vue_compensation_operateurs')
+        ->selectSum('montant_transfere', 'total')
+        ->get()
+        ->getRowArray();
+
+    return (float)($row['total'] ?? 0);
+}
+
+public function getTotalFraisPercus(): float
+{
+    $row = $this->db
+        ->table('vue_compensation_operateurs')
+        ->selectSum('frais_percus', 'total')
+        ->get()
+        ->getRowArray();
+
+    return (float)($row['total'] ?? 0);
+}
+
+public function getTotalTransferts(): int
+{
+    $row = $this->db
+        ->table('vue_compensation_operateurs')
+        ->selectSum('nb_transferts', 'total')
+        ->get()
+        ->getRowArray();
+
+    return (int)($row['total'] ?? 0);
+}
+
+public function getNombreOperateurs(): int
+{
+    return $this->db
+        ->table('vue_compensation_operateurs')
+        ->countAllResults();
+}
+
 }

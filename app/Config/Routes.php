@@ -67,4 +67,7 @@ $routes->group('operateur', function (RouteCollection $routes) {
     $routes->get( 'baremes',               'AdminOperateurController::baremes');
     $routes->post('baremes/store',         'AdminOperateurController::storeBareme');
     $routes->get( 'baremes/delete/(:num)', 'AdminOperateurController::deleteBareme/$1');
+
+    // Compensation / Clearing inter-opérateurs
+    $routes->get('compensation', 'AdminOperateurController::compensation');
 });
