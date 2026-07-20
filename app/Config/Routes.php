@@ -5,21 +5,41 @@ use CodeIgniter\Router\RouteCollection;
 /**
  * @var RouteCollection $routes
  */
-$routes->get('/', 'Articles::index');
 
-// Authentification
-$routes->get('register', 'Auth::register');
-$routes->post('register', 'Auth::register');
-$routes->get('login', 'Auth::login');
-$routes->post('login', 'Auth::login');
-$routes->get('logout', 'Auth::logout');
+// Par défaut : redirection ou affichage de la page de connexion
+$routes->get('/', 'AuthController::login');
 
-// Articles
-$routes->get('articles', 'Articles::index');
-$routes->get('articles/create', 'Articles::create');
-$routes->post('articles/store', 'Articles::store');
-$routes->get('articles/delete/(:num)', 'Articles::delete/$1');
+// --- Authentification ---
+$routes->get('login', 'AuthController::login');
+$routes->post('login', 'AuthController::login');
+$routes->get('logout', 'AuthController::logout');
 
-// Administration
-$routes->get('admin', 'Admin::dashboard');
-$routes->get('admin/delete/(:num)', 'Admin::deleteUser/$1');
+// --- Côté Client (Espace Utilisateur) ---
+$routes->group('client', function (RouteCollection $routes) {
+    // Voir le solde (Page d'accueil du client)
+    $routes->get('dashboard', 'ClientController::index');
+    
+    // Dépôt
+    $routes->get('depot', 'ClientController::depot');
+    $routes->post('store-depot', 'ClientController::storeDepot');
+    
+    // Retrait
+    $routes->get('retrait', 'ClientController::retrait');
+    $routes->post('store-retrait', 'ClientController::storeRetrait');
+    
+    // Transfert
+    $routes->get('transfert', 'ClientController::transfert');
+    $routes->post('store-transfert', 'ClientController::storeTransfert');
+    
+    // Historique des opérations
+    $routes->get('historique', 'ClientController::historique');
+});
+
+// --- Côté Opérateur (Administration) ---
+$routes->group('operator', function (RouteCollection $routes) {
+    // Situation des gains (via les différents frais)
+    $routes->get('dashboard', 'OperatorController::dashboard');
+    
+    // Situation des comptes clients
+    $routes->get('clients', 'OperatorController::clients');
+});
