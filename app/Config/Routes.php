@@ -66,3 +66,7 @@ $routes->group('operateur', function (RouteCollection $routes) {
     $routes->post('baremes/store',         'OperateurController::storeBareme');
     $routes->get( 'baremes/delete/(:num)', 'OperateurController::deleteBareme/$1');
 });
+
+$routes->get('config-operateurs', 'OperateurController::configOperateurs');
+$routes->post('operateurs/store', 'OperateurController::storeOperateur');
+$routes->post('prefixes/store', 'OperateurController::storePrefixe');
