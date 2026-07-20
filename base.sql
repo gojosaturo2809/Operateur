@@ -50,6 +50,8 @@ CREATE TABLE operations (
     numero_destinataire TEXT     NULL,
     montant             REAL     NOT NULL,
     frais_applique      REAL     NOT NULL DEFAULT 0,
+    inclure_frais_retrait INTEGER NOT NULL DEFAULT 0,
+    batch_envoi_multiple VARCHAR(50) NULL,
     date_operation      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_client)         REFERENCES clients(id),
     FOREIGN KEY (id_type_operation) REFERENCES types_operation(id)
