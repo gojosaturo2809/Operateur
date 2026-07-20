@@ -4,7 +4,7 @@
 
 <div class="page-header">
     <h1>Préfixes autorisés</h1>
-    <p>Gérez les préfixes réseau acceptés pour la connexion client.</p>
+    <p>Associez chaque préfixe réseau à son opérateur (local ou tiers).</p>
 </div>
 
 <!-- ── Formulaire d'ajout ─────────────────────────────────────── -->
@@ -17,23 +17,40 @@
         <form method="post" action="<?= base_url('operateur/prefixes/store') ?>"
               class="d-flex align-items-end gap-3 flex-wrap">
             <?= csrf_field() ?>
-            <div style="flex:1;min-width:180px;">
+
+            <div style="flex:1;min-width:160px;">
                 <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151;margin-bottom:.4rem;">
                     Préfixe réseau
                 </label>
                 <div style="position:relative;">
                     <i class="bi bi-sim"
                        style="position:absolute;left:.875rem;top:50%;transform:translateY(-50%);
-                              color:#94a3b8;font-size:.95rem;pointer-events:none;"></i>
+                              color:#94a3b8;font-size:.9rem;pointer-events:none;"></i>
                     <input type="text"
                            name="prefixe"
                            class="form-control"
                            style="padding-left:2.5rem;height:2.75rem;"
-                           placeholder="Ex : 033 ou 037"
+                           placeholder="Ex : 033"
                            maxlength="5"
                            required>
                 </div>
             </div>
+
+            <div style="flex:1;min-width:200px;">
+                <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151;margin-bottom:.4rem;">
+                    Opérateur associé
+                </label>
+                <select name="id_operateur" class="form-select" style="height:2.75rem;" required>
+                    <option value="">Choisir…</option>
+                    <?php foreach ($operateurs ?? [] as $op): ?>
+                    <option value="<?= $op['id'] ?>">
+                        <?= esc($op['nom']) ?>
+                        <?= $op['est_principal'] ? ' (principal)' : ' (tiers)' ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
             <button class="btn btn-primary d-flex align-items-center gap-2"
                     style="height:2.75rem;white-space:nowrap;">
                 <i class="bi bi-plus-lg"></i> Ajouter
@@ -55,14 +72,16 @@
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Préfixe réseau</th>
+                    <th>Préfixe</th>
+                    <th>Opérateur</th>
+                    <th>Type</th>
                     <th class="text-end">Action</th>
                 </tr>
             </thead>
             <tbody>
             <?php if (empty($prefixes)): ?>
                 <tr>
-                    <td colspan="3" class="text-center py-5" style="color:var(--text-muted);">
+                    <td colspan="5" class="text-center py-5" style="color:var(--text-muted);">
                         <i class="bi bi-sim d-block mb-2" style="font-size:1.75rem;opacity:.4;"></i>
                         Aucun préfixe enregistré.
                     </td>
@@ -72,15 +91,26 @@
                 <tr>
                     <td style="color:var(--text-muted);font-size:.85rem;"><?= esc($p['id']) ?></td>
                     <td>
-                        <span style="display:inline-flex;align-items:center;gap:.5rem;
-                                     font-size:.9rem;font-weight:700;color:#0f172a;">
-                            <span style="width:1.75rem;height:1.75rem;border-radius:.4rem;
-                                         background:#eff6ff;color:#3b82f6;display:inline-flex;
-                                         align-items:center;justify-content:center;font-size:.8rem;">
-                                <i class="bi bi-sim"></i>
-                            </span>
+                        <span style="font-size:.95rem;font-weight:700;font-family:monospace;
+                                     color:#0f172a;letter-spacing:.05em;">
                             <?= esc($p['prefixe']) ?>
                         </span>
+                    </td>
+                    <td style="font-size:.875rem;color:#374151;">
+                        <?= esc($p['operateur_nom'] ?? '—') ?>
+                    </td>
+                    <td>
+                        <?php if ($p['est_principal']): ?>
+                        <span style="background:#ecfdf5;color:#059669;padding:.2rem .65rem;
+                                     border-radius:2rem;font-size:.73rem;font-weight:700;border:1px solid #a7f3d0;">
+                            <i class="bi bi-house-fill me-1" style="font-size:.65rem;"></i>Local
+                        </span>
+                        <?php else: ?>
+                        <span style="background:#f5f3ff;color:#7c3aed;padding:.2rem .65rem;
+                                     border-radius:2rem;font-size:.73rem;font-weight:700;border:1px solid #ddd6fe;">
+                            <i class="bi bi-arrow-left-right me-1" style="font-size:.65rem;"></i>Tiers
+                        </span>
+                        <?php endif; ?>
                     </td>
                     <td class="text-end">
                         <a href="<?= base_url('operateur/prefixes/delete/' . $p['id']) ?>"
