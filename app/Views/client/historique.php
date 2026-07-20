@@ -1,77 +1,89 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"><title>MobiMoney - Historique</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-</head>
-<body class="bg-light py-4">
-<div class="container" style="max-width: 800px;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Mes Transactions</h4>
-        <a href="<?= base_url('client/dashboard') ?>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-house"></i> Dashboard</a>
+<?= $this->extend('layouts/client') ?>
+
+<?= $this->section('content') ?>
+
+<div class="client-page-header">
+    <h2>Historique</h2>
+    <p>Toutes vos transactions</p>
+</div>
+
+<?php if (empty($historique)): ?>
+    <div style="text-align:center;padding:3rem 1rem;color:#94a3b8;">
+        <i class="bi bi-inbox" style="font-size:2.5rem;display:block;margin-bottom:.75rem;opacity:.5;"></i>
+        <p style="font-size:.9rem;font-weight:500;margin:0;">Aucune transaction pour le moment.</p>
     </div>
 
-    <div class="card shadow border-0 rounded-4 overflow-hidden">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Date & Heure</th>
-                        <th>Type d'opération</th>
-                        <th>Détails / Tiers</th>
-                        <th class="text-end">Montant brut</th>
-                        <th class="text-end">Frais appliqués</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($historique)): ?>
-                        <tr><td colspan="5" class="text-center py-4 text-muted">Aucune opération enregistrée pour le moment.</td></tr>
-                    <?php else: ?>
-                        <?php foreach ($historique as $op): 
-                            // Analyse fine du sens de l'opération
-                            $estAuteur = ($op['auteur_telephone'] === $telephone);
-                            $estTransfert = ($op['type_nom'] === 'transfert');
-                            
-                            if ($op['type_nom'] === 'depot') {
-                                $classCouleur = 'table-success text-success fw-bold';
-                                $prefixeFlux = '+ ';
-                                $details = 'Versement en Agence';
-                            } elseif ($op['type_nom'] === 'retrait') {
-                                $classCouleur = 'table-danger text-danger fw-bold';
-                                $prefixeFlux = '- ';
-                                $details = 'Retrait Guichet';
-                            } else { // Cas du transfert
-                                if ($estAuteur) {
-                                    $classCouleur = 'table-danger text-danger fw-bold';
-                                    $prefixeFlux = '- ';
-                                    $details = 'Vers le : ' . esc($op['numero_destinataire']);
-                                } else {
-                                    $classCouleur = 'table-success text-success fw-bold';
-                                    $prefixeFlux = '+ ';
-                                    $details = 'Reçu de : ' . esc($op['auteur_telephone']);
-                                }
-                            }
-                        ?>
-                            <tr>
-                                <td class="small text-muted"><?= date('d/m/Y H:i', strtotime($op['date_operation'])) ?></td>
-                                <td>
-                                    <span class="badge rounded-pill bg-secondary text-uppercase small"><?= esc($op['type_nom']) ?></span>
-                                </td>
-                                <td class="small fw-semibold"><?= $details ?></td>
-                                <td class="text-end <?= $classCouleur ?>">
-                                    <?= $prefixeFlux . number_format($op['montant'], 2, ',', ' ') ?> Ar
-                                </td>
-                                <td class="text-end text-muted small">
-                                    <?= ($estAuteur && $op['frais_applique'] > 0) ? number_format($op['frais_applique'], 2, ',', ' ') . ' Ar' : '--' ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
+<?php else: ?>
+
+    <div class="client-tx-list">
+    <?php foreach ($historique as $op):
+        $estAuteur = ($op['auteur_telephone'] ?? '') === ($telephone ?? '');
+        $typeNom   = $op['type_nom'] ?? '';
+
+        if ($typeNom === 'depot') {
+            $icon     = 'bi-arrow-down-left-circle-fill';
+            $iconBg   = '#ecfdf5';
+            $iconClr  = '#10b981';
+            $amtClr   = '#10b981';
+            $prefixe  = '+';
+            $detail   = 'Versement en agence';
+        } elseif ($typeNom === 'retrait') {
+            $icon     = 'bi-arrow-up-right-circle-fill';
+            $iconBg   = '#fef2f2';
+            $iconClr  = '#ef4444';
+            $amtClr   = '#ef4444';
+            $prefixe  = '−';
+            $detail   = 'Retrait guichet';
+        } else {
+            if ($estAuteur) {
+                $icon    = 'bi-send-fill';
+                $iconBg  = '#eff6ff';
+                $iconClr = '#3b82f6';
+                $amtClr  = '#ef4444';
+                $prefixe = '−';
+                $detail  = 'Vers ' . esc($op['numero_destinataire'] ?? '');
+            } else {
+                $icon    = 'bi-send-fill';
+                $iconBg  = '#ecfdf5';
+                $iconClr = '#10b981';
+                $amtClr  = '#10b981';
+                $prefixe = '+';
+                $detail  = 'Reçu de ' . esc($op['auteur_telephone'] ?? '');
+            }
+        }
+    ?>
+    <div class="client-tx-item">
+
+        <!-- Icône -->
+        <span class="client-tx-dot" style="background:<?= $iconBg ?>;color:<?= $iconClr ?>;">
+            <i class="bi <?= $icon ?>"></i>
+        </span>
+
+        <!-- Infos -->
+        <div class="client-tx-info">
+            <div class="client-tx-type"><?= ucfirst($typeNom) ?></div>
+            <div class="client-tx-detail"><?= $detail ?></div>
+            <div class="client-tx-detail" style="margin-top:.15rem;">
+                <?= date('d/m/Y · H:i', strtotime($op['date_operation'])) ?>
+            </div>
         </div>
+
+        <!-- Montant -->
+        <div>
+            <div class="client-tx-amount" style="color:<?= $amtClr ?>;">
+                <?= $prefixe ?>&nbsp;<?= number_format($op['montant'], 0, ',', ' ') ?>&nbsp;Ar
+            </div>
+            <?php if ($estAuteur && ($op['frais_applique'] ?? 0) > 0): ?>
+            <div class="client-tx-frais">
+                Frais : <?= number_format($op['frais_applique'], 0, ',', ' ') ?> Ar
+            </div>
+            <?php endif; ?>
+        </div>
+
     </div>
-</div>
-</body>
-</html>
+    <?php endforeach; ?>
+    </div>
+
+<?php endif; ?>
+
+<?= $this->endSection() ?>
