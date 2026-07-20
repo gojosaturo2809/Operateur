@@ -1,27 +1,47 @@
-<aside class="sidebar bg-primary text-white">
-    <div class="sidebar-brand d-flex align-items-center gap-2 p-3 border-bottom border-light border-opacity-25">
-        <i class="bi bi-wallet2 fs-4"></i>
-        <span class="fw-bold">MobiMoney</span>
-    </div>
-    <nav class="nav flex-column p-2">
-        <a href="<?= base_url('client/dashboard') ?>" class="nav-link <?= (uri_string() == 'client/dashboard') ? 'active' : '' ?>">
-            <i class="bi bi-house-door me-2"></i> Solde &amp; Accueil
+<aside class="sidebar">
+
+    <a href="<?= base_url('client/dashboard') ?>" class="sidebar-brand">
+        <i class="bi bi-wallet2"></i>
+        MobiMoney
+        <span class="brand-badge" style="background:#10b981;">Client</span>
+    </a>
+
+    <nav class="nav flex-column">
+
+        <div class="sidebar-section-label">Mon compte</div>
+
+        <a href="<?= base_url('client/dashboard') ?>"
+           class="nav-link <?= uri_string() === 'client/dashboard' ? 'active' : '' ?>">
+            <i class="bi bi-house-door"></i> Accueil
         </a>
-        <a href="<?= base_url('client/depot') ?>" class="nav-link <?= (uri_string() == 'client/depot') ? 'active' : '' ?>">
-            <i class="bi bi-plus-circle me-2"></i> Dépôt
+
+        <a href="<?= base_url('client/historique') ?>"
+           class="nav-link <?= uri_string() === 'client/historique' ? 'active' : '' ?>">
+            <i class="bi bi-clock-history"></i> Historique
         </a>
-        <a href="<?= base_url('client/retrait') ?>" class="nav-link <?= (uri_string() == 'client/retrait') ? 'active' : '' ?>">
-            <i class="bi bi-dash-circle me-2"></i> Retrait
+
+        <div class="sidebar-section-label">Opérations</div>
+
+        <a href="<?= base_url('client/depot') ?>"
+           class="nav-link <?= uri_string() === 'client/depot' ? 'active' : '' ?>">
+            <i class="bi bi-plus-circle"></i> Dépôt
         </a>
-        <a href="<?= base_url('client/transfert') ?>" class="nav-link <?= (uri_string() == 'client/transfert') ? 'active' : '' ?>">
-            <i class="bi bi-send me-2"></i> Transfert
+
+        <a href="<?= base_url('client/retrait') ?>"
+           class="nav-link <?= uri_string() === 'client/retrait' ? 'active' : '' ?>">
+            <i class="bi bi-dash-circle"></i> Retrait
         </a>
-        <a href="<?= base_url('client/historique') ?>" class="nav-link <?= (uri_string() == 'client/historique') ? 'active' : '' ?>">
-            <i class="bi bi-clock-history me-2"></i> Historique
+
+        <a href="<?= base_url('client/transfert') ?>"
+           class="nav-link <?= uri_string() === 'client/transfert' ? 'active' : '' ?>">
+            <i class="bi bi-send"></i> Transfert
         </a>
-        <hr class="text-light text-opacity-25">
-        <a href="<?= base_url('logout') ?>" class="nav-link text-warning">
-            <i class="bi bi-box-arrow-right me-2"></i> Déconnexion
+
+        <hr>
+
+        <a href="<?= base_url('logout') ?>" class="nav-link text-danger">
+            <i class="bi bi-box-arrow-right"></i> Déconnexion
         </a>
+
     </nav>
 </aside>
