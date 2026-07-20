@@ -35,6 +35,8 @@ $routes->group('client', function (RouteCollection $routes) {
     $routes->post('store-retrait',   'ClientController::storeRetrait');
     $routes->get( 'transfert',       'ClientController::transfert');
     $routes->post('store-transfert', 'ClientController::storeTransfert');
+    $routes->get( 'envoi-multiple',       'ClientController::envoiMultiple');
+    $routes->post('storeEnvoiMultiple',   'ClientController::storeEnvoiMultiple');
     $routes->get( 'historique',      'ClientController::historique');
 });
 
