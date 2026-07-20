@@ -32,13 +32,13 @@ GROUP BY t.nom;
 
 - Situation gain via les différents frais ( retrait et transfert)
     - [ok] [15minute] **Page** : `app/Views/operateur/gains.php` (Tableau de bord de l'administration)
-    - [ok] [20minute] **Fonction** : `operateurController::index()` faisant appel à `GainModel::getSituationGains()`
+    - [ok] [20minute] **Fonction** : `AdminOperateurController::index()` faisant appel à `GainModel::getSituationGains()`
     - [ok] [25minute] **Base** : Lecture depuis la vue `vue_situation_gains` (sélection et agrégation des frais appliqués sur les retraits et transferts)
     - [ok] [35minute] **Integration** : Cartes récapitulatives Bootstrap (Cards success/info) pour le gain brut global, suivies d'un tableau récapitulatif structuré (Volume de transactions, Volume financier global, Total des frais perçus)
 
 - Situation des comptes clients
     - [ok] [15minute] **Page** : `app/Views/operateur/comptes_clients.php` (Vue liste des comptes)
-    - [ok] [20minute] **Fonction** : `operateurController::clients()` appelant `ClientModel::getStatutComptes()`
+    - [ok] [20minute] **Fonction** : `AdminOperateurController::clients()` appelant `ClientModel::getStatutComptes()`
     - [ok] [30minute] **Base** : Tables `Client` et `Operation` (Calcul dynamique et algébrique du solde de chaque client via la somme des dépôts moins la somme des retraits et transferts)
     - [ok] [45minute] **Integration** : Tableau responsive Bootstrap listant tous les clients enregistred avec barre de recherche, tri et mise en avant des soldes positifs ou nuls
 
@@ -87,12 +87,12 @@ GROUP BY t.nom;
     - [ok] [60minute] **Integration** : Graphiques Chart.js (Bar, Donut, Line) et cartes fluides
 - **Situation gain via les différents frais (retrait et transfert)**
     - [ok] [15minute] **Page** : `app/Views/operateur/gains.php`
-    - [ok] [20minute] **Fonction** : `operateurController::index()`
+    - [ok] [20minute] **Fonction** : `AdminOperateurController::index()`
     - [ok] [25minute] **Base** : Lecture depuis la vue `vue_situation_gains`
     - [ok] [35minute] **Integration** : Cartes récapitulatives Bootstrap
 - **Situation des comptes clients**
     - [ok] [15minute] **Page** : `app/Views/operateur/comptes_clients.php`
-    - [ok] [20minute] **Fonction** : `operateurController::clients()`
+    - [ok] [20minute] **Fonction** : `AdminOperateurController::clients()`
     - [ok] [30minute] **Base** : Calcul dynamique du solde (Dépôts - Retraits - Transferts)
     - [ok] [45minute] **Integration** : Tableau responsive Bootstrap avec barre de recherche
 
@@ -116,17 +116,17 @@ GROUP BY t.nom;
 ### 3.1 . Coté Operateur []
 - **Configuration des opérateurs tiers et préfixes**
     - [ok] [15minute] **Page** : `app/Views/operateur/config_operateurs.php`
-    - [ ] [15minute] **Fonction** : `OperateurController::storeOperateur()` et `storePrefixe()`
+    - [ ] [15minute] **Fonction** : `AdminOperateurController::storeOperateur()` et `storePrefixe()`
     - [ ] [10minute] **Base** : Insertion dans les tables `operateurs` (ex: Telma, Orange) et liaison des préfixes associés (034, 032...)
     - [ ] [15minute] **Integration** : Formulaire de gestion de la commission en % par opérateur tiers
 - **Séparation des gains (Opérateur Principal vs Autres)**
     - [ ] [15minute] **Page** : `app/Views/operateur/gains.php` (Mise à jour)
-    - [ ] [20minute] **Fonction** : `OperateurController::gainsSynthese()`
+    - [ ] [20minute] **Fonction** : `AdminOperateurController::gainsSynthese()`
     - [ ] [20minute] **Base** : Modification SQL pour séparer les calculs selon le flag `est_principal` de l'opérateur de destination
     - [ ] [15minute] **Integration** : Refonte de l'interface avec deux blocs distincts : "Gains Réseau Local" et "Commissions Inter-Opérateurs"
 - **Situation des montants à envoyer (Compensation / Clearing)**
     - [ ] [15minute] **Page** : `app/Views/operateur/compensation.php`
-    - [ ] [15minute] **Fonction** : `OperateurController::compensation()`
+    - [ ] [15minute] **Fonction** : `AdminOperateurController::compensation()`
     - [ ] [15minute] **Base** : Agrégation des montants nets (`SUM(montant)`) transférés vers chaque opérateur tiers (`est_principal = FALSE`)
     - [ ] [15minute] **Integration** : Tableau récapitulatif des balances financières à reverser à chaque entité externe
 

@@ -46,22 +46,23 @@ $routes->group('operateur', function (RouteCollection $routes) {
     // Situation des gains (Dashboard principal opérateur)
     $routes->get('/',           'DashboardAdminController::index');
     $routes->get('dashboard',   'DashboardAdminController::index');
-    $routes->get('gains',       'OperateurController::index');
+    $routes->get('gains',       'AdminOperateurController::index');
 
     // Liste des comptes clients
-    $routes->get('clients',     'OperateurController::clients');
+    $routes->get('clients',     'AdminOperateurController::clients');
 
     // CRUD : Préfixes autorisés
-    $routes->get( 'prefixes',               'OperateurController::prefixes');
-    $routes->post('prefixes/store',         'OperateurController::storePrefixe');
-    $routes->get( 'prefixes/delete/(:num)', 'OperateurController::deletePrefixe/$1');
+    $routes->get( 'prefixes',               'AdminOperateurController::prefixes');
+    $routes->post('prefixes/store',         'AdminOperateurController::storePrefixe');
+    $routes->get( 'prefixes/delete/(:num)', 'AdminOperateurController::deletePrefixe/$1');
 
     // CRUD : Types d'opération
-    $routes->get( 'types-operation',               'OperateurController::typesOperation');
-    $routes->post('types-operation/store',         'OperateurController::storeTypeOperation');
-    $routes->get( 'types-operation/delete/(:num)', 'OperateurController::deleteTypeOperation/$1');
+    $routes->get( 'types-operation',               'AdminOperateurController::typesOperation');
+    $routes->post('types-operation/store',         'AdminOperateurController::storeTypeOperation');
+    $routes->get( 'types-operation/delete/(:num)', 'AdminOperateurController::deleteTypeOperation/$1');
 
     // CRUD : Barèmes de frais
+<<<<<<< HEAD
     $routes->get( 'baremes',               'OperateurController::baremes');
     $routes->post('baremes/store',         'OperateurController::storeBareme');
     $routes->get( 'baremes/delete/(:num)', 'OperateurController::deleteBareme/$1');
@@ -70,3 +71,9 @@ $routes->group('operateur', function (RouteCollection $routes) {
 $routes->get('config-operateurs', 'OperateurController::configOperateurs');
 $routes->post('operateurs/store', 'OperateurController::storeOperateur');
 $routes->post('prefixes/store', 'OperateurController::storePrefixe');
+=======
+    $routes->get( 'baremes',               'AdminOperateurController::baremes');
+    $routes->post('baremes/store',         'AdminOperateurController::storeBareme');
+    $routes->get( 'baremes/delete/(:num)', 'AdminOperateurController::deleteBareme/$1');
+});
+>>>>>>> aa17a87f18509464f04b6c90d10774f7d6eb7015

@@ -8,7 +8,7 @@ use App\Models\AdminModel;
 use App\Models\TypeAdminModel;
 use App\Models\PrefixeModel;
 
-class OperateurController extends BaseController
+class AdminOperateurController extends BaseController
 {
     private \CodeIgniter\Database\BaseConnection $db;
 
