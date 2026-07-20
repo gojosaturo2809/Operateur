@@ -1,11 +1,11 @@
 # ProjetOperation
 ## 1 . Conception MCD (table used (and view))
-- Préfixe :(id,prefixe TEXT)
-- Types_Operation :(id,nom TEXT (depot,retrait,transfert))
-- bareme_frais :(id,id_type_operation,montant_minimum,montant_maximum, frais,#id_type_operation REFERENCES Types_Operation(id))
-- Client :(id,telephone)
-- Operation :(id,id_type_operation,id_client,montant,numero_destinateur ,frais_appliqué, date_operation, #id_type_operation REFERENCES Types_Operation(id), #id_client REFERENCES Client(id))
-- view_situation_gain
+- [ok] Préfixe :(id,prefixe TEXT)
+- [ok] Types_Operation :(id,nom TEXT (depot,retrait,transfert))
+- [ok] bareme_frais :(id,id_type_operation,montant_minimum,montant_maximum, frais,#id_type_operation REFERENCES Types_Operation(id))
+- [ok] Client :(id,telephone)
+- [ok] Operation :(id,id_type_operation,id_client,montant,numero_destinateur ,frais_appliqué, date_operation, #id_type_operation REFERENCES Types_Operation(id), #id_client REFERENCES Client(id))
+- [ok] view_situation_gain
 ```sql
 CREATE VIEW vue_situation_gains AS
 SELECT 
@@ -24,14 +24,14 @@ GROUP BY t.nom;
 ## 2 . Version 1
 ### 2.1 . Coté Operateur
 - Situation gain via les différents frais ( retrait et transfert)
-    - **Page** : `app/Views/operator/gains.php` (Tableau de bord de l'administration)
-    - **Fonction** : `OperatorController::index()` faisant appel à `GainModel::getSituationGains()`
+    - **Page** : `app/Views/operateur/gains.php` (Tableau de bord de l'administration)
+    - [ok] **Fonction** : `operateurController::index()` faisant appel à `GainModel::getSituationGains()`
     - **Base** : Lecture depuis la vue `vue_situation_gains` (sélection et agrégation des frais appliqués sur les retraits et transferts)
     - **Integration** : Cartes récapitulatives Bootstrap (Cards success/info) pour le gain brut global, suivies d'un tableau récapitulatif structuré (Volume de transactions, Volume financier global, Total des frais perçus)
 
 - Situation des comptes clients
-    - **Page** : `app/Views/operator/comptes_clients.php` (Vue liste des comptes)
-    - **Fonction** : `OperatorController::clients()` appelant `ClientModel::getStatutComptes()`
+    - **Page** : `app/Views/operateur/comptes_clients.php` (Vue liste des comptes)
+    - **Fonction** : `operateurController::clients()` appelant `ClientModel::getStatutComptes()`
     - **Base** : Tables `Client` et `Operation` (Calcul dynamique et algébrique du solde de chaque client via la somme des dépôts moins la somme des retraits et transferts)
     - **Integration** : Tableau responsive Bootstrap listant tous les clients enregistred avec barre de recherche, tri et mise en avant des soldes positifs ou nuls
 

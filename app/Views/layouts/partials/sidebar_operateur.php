@@ -1,30 +1,54 @@
-<aside class="sidebar bg-dark text-white">
-    <div class="sidebar-brand d-flex align-items-center gap-2 p-3 border-bottom border-secondary">
-        <i class="bi bi-phone-fill fs-4"></i>
-        <span class="fw-bold">MobiMoney <small class="text-warning">Opérateur</small></span>
-    </div>
-    <nav class="nav flex-column p-2">
-        <a href="<?= base_url('operateur/dashboard') ?>" class="nav-link <?= (uri_string() == 'operateur/dashboard') ? 'active' : '' ?>">
-            <i class="bi bi-speedometer2 me-2"></i> Tableau de bord
+<aside class="sidebar">
+
+    <a href="<?= base_url('operateur/dashboard') ?>" class="sidebar-brand">
+        <i class="bi bi-phone-fill"></i>
+        MobiMoney
+        <span class="brand-badge">Admin</span>
+    </a>
+
+    <nav class="nav flex-column">
+
+        <div class="sidebar-section-label">Navigation</div>
+
+        <a href="<?= base_url('operateur/dashboard') ?>"
+           class="nav-link <?= (uri_string() === 'operateur/dashboard' || uri_string() === 'operateur') ? 'active' : '' ?>">
+            <i class="bi bi-speedometer2"></i> Tableau de bord
         </a>
-        <a href="<?= base_url('operateur/prefixes') ?>" class="nav-link <?= (uri_string() == 'operateur/prefixes') ? 'active' : '' ?>">
-            <i class="bi bi-sim me-2"></i> Préfixes
+
+        <a href="<?= base_url('operateur/clients') ?>"
+           class="nav-link <?= (uri_string() === 'operateur/clients') ? 'active' : '' ?>">
+            <i class="bi bi-people"></i> Comptes clients
         </a>
-        <a href="<?= base_url('operateur/types-operation') ?>" class="nav-link <?= (uri_string() == 'operateur/types-operation') ? 'active' : '' ?>">
-            <i class="bi bi-arrow-left-right me-2"></i> Types d'opération
+
+        <div class="sidebar-section-label">Configuration</div>
+
+        <a href="<?= base_url('operateur/prefixes') ?>"
+           class="nav-link <?= (uri_string() === 'operateur/prefixes') ? 'active' : '' ?>">
+            <i class="bi bi-sim"></i> Préfixes
         </a>
-        <a href="<?= base_url('operateur/baremes') ?>" class="nav-link <?= (uri_string() == 'operateur/baremes') ? 'active' : '' ?>">
-            <i class="bi bi-cash-coin me-2"></i> Barèmes de frais
+
+        <a href="<?= base_url('operateur/types-operation') ?>"
+           class="nav-link <?= (uri_string() === 'operateur/types-operation') ? 'active' : '' ?>">
+            <i class="bi bi-arrow-left-right"></i> Types d'opération
         </a>
-        <a href="<?= base_url('operateur/gains') ?>" class="nav-link <?= (uri_string() == 'operateur/gains') ? 'active' : '' ?>">
-            <i class="bi bi-graph-up-arrow me-2"></i> Situation des gains
+
+        <a href="<?= base_url('operateur/baremes') ?>"
+           class="nav-link <?= (uri_string() === 'operateur/baremes') ? 'active' : '' ?>">
+            <i class="bi bi-sliders"></i> Barèmes de frais
         </a>
-        <a href="<?= base_url('operateur/clients') ?>" class="nav-link <?= (uri_string() == 'operateur/clients') ? 'active' : '' ?>">
-            <i class="bi bi-people me-2"></i> Comptes clients
+
+        <div class="sidebar-section-label">Rapports</div>
+
+        <a href="<?= base_url('operateur/gains') ?>"
+           class="nav-link <?= (uri_string() === 'operateur/gains') ? 'active' : '' ?>">
+            <i class="bi bi-graph-up-arrow"></i> Situation des gains
         </a>
-        <hr class="text-secondary">
+
+        <hr>
+
         <a href="<?= base_url('logout') ?>" class="nav-link text-danger">
-            <i class="bi bi-box-arrow-right me-2"></i> Déconnexion
+            <i class="bi bi-box-arrow-right"></i> Déconnexion
         </a>
+
     </nav>
 </aside>

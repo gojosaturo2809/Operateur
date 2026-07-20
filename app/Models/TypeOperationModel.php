@@ -48,9 +48,7 @@ class TypeOperationModel extends Model
     public function modifier($id, $nom)
     {
         // Sécurisation des deux variables ($id en int, $nom en string)
-        return $this->update((int) $id, [
-            'nom' => trim((string) $nom))
-        ]);
+        return $this->update((int) $id, ['nom' => trim((string) $nom)]);
     }
 
     /**
