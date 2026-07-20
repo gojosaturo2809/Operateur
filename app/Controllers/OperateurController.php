@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Models\GainModel;
 use App\Models\ClientModel;
 use App\Models\TypeOperationModel;
+use App\Models\PrefixeModel;
 
 class OperateurController extends BaseController
 {
@@ -15,8 +16,9 @@ class OperateurController extends BaseController
         $this->db = \Config\Database::connect();
     }
 
-    
-
+    /**
+     * Vue : Situation des gains (Tableau de bord principal)
+     */
     public function index(): string
     {
         $gainModel = new GainModel();
@@ -30,8 +32,9 @@ class OperateurController extends BaseController
         ]);
     }
 
-   
-
+    /**
+     * Vue : Liste de la situation des comptes clients
+     */
     public function clients(): string
     {
         $clients = $this->db->table('clients')
@@ -46,5 +49,123 @@ class OperateurController extends BaseController
         ]);
     }
 
-    
+    // =============================================================================
+    // 1. CRUD : PRÉFIXES AUTORISÉS
+    // =============================================================================
+
+    public function prefixes(): string
+    {
+        $prefixes = $this->db->table('prefixes')
+            ->orderBy('prefixe', 'ASC')
+            ->get()->getResultArray();
+
+        return view('operateur/prefixes', [
+            'title'     => 'Gestion des préfixes',
+            'pageTitle' => 'Préfixes autorisés',
+            'sidebar'   => 'sidebar_operateur',
+            'prefixes'  => $prefixes,
+        ]);
+    }
+
+    public function storePrefixe()
+    {
+        $prefixe = $this->request->getPost('prefixe');
+
+        if (!empty($prefixe)) {
+            $this->db->table('prefixes')->insert([
+                'prefixe' => trim($prefixe)
+            ]);
+            return redirect()->back()->with('succes', 'Préfixe ajouté avec succès !');
+        }
+
+        return redirect()->back()->with('erreur', 'Le champ préfixe ne peut pas être vide.');
+    }
+
+    public function deletePrefixe(int $id)
+    {
+        $this->db->table('prefixes')->where('id', $id)->delete();
+        return redirect()->back()->with('succes', 'Préfixe supprimé avec succès.');
+    }
+
+    // =============================================================================
+    // 2. CRUD : TYPES D'OPÉRATIONS
+    // =============================================================================
+
+    public function typesOperation(): string
+    {
+        $types = $this->db->table('types_operation')
+            ->orderBy('id', 'ASC')
+            ->get()->getResultArray();
+
+        return view('operateur/types_operation', [
+            'title'     => 'Types d\'opérations',
+            'pageTitle' => 'Configuration des opérations',
+            'sidebar'   => 'sidebar_operateur',
+            'types'     => $types,
+        ]);
+    }
+
+    public function storeTypeOperation()
+    {
+        $nom = $this->request->getPost('nom');
+
+        if (!empty($nom)) {
+            $this->db->table('types_operation')->insert([
+                'nom' => strtolower(trim($nom))
+            ]);
+            return redirect()->back()->with('succes', 'Type d\'opération créé avec succès.');
+        }
+
+        return redirect()->back()->with('erreur', 'Le nom du type d\'opération est obligatoire.');
+    }
+
+    public function deleteTypeOperation(int $id)
+    {
+        $this->db->table('types_operation')->where('id', $id)->delete();
+        return redirect()->back()->with('succes', 'Type d\'opération retiré avec succès.');
+    }
+
+    // =============================================================================
+    // 3. CRUD : BARÈMES DE FRAIS
+    // =============================================================================
+
+    public function baremes(): string
+    {
+        // Récupération des barèmes combinés avec le libellé de leur type d'opération
+        $baremes = $this->db->table('bareme_frais b')
+            ->select('b.*, t.nom as type_nom')
+            ->join('types_operation t', 't.id = b.id_type_operation')
+            ->orderBy('b.id_type_operation', 'ASC')
+            ->orderBy('b.montant_min', 'ASC')
+            ->get()->getResultArray();
+
+        // Récupération des types d'opérations pour alimenter le select du formulaire
+        $types = $this->db->table('types_operation')->get()->getResultArray();
+
+        return view('operateur/baremes', [
+            'title'     => 'Barèmes des frais',
+            'pageTitle' => 'Barèmes des frais par tranche',
+            'sidebar'   => 'sidebar_operateur',
+            'baremes'   => $baremes,
+            'types'     => $types,
+        ]);
+    }
+
+    public function storeBareme()
+    {
+        $this->db->table('bareme_frais')->insert([
+            'id_type_operation' => (int) $this->request->getPost('id_type_operation'),
+            'montant_min'       => (float) $this->request->getPost('montant_min'),
+            'montant_max'       => (float) $this->request->getPost('montant_max'),
+            'frais'             => (float) $this->request->getPost('frais'),
+        ]);
+
+        return redirect()->back()->with('succes', 'Nouvelle règle tarifaire ajoutée au barème !');
+    }
+
+    public function deleteBareme(int $id)
+    {
+        $this->db->table('bareme_frais')->where('id', $id)->delete();
+        return redirect()->back()->with('succes', 'Règle tarifaire supprimée du barème.');
+    }
 }

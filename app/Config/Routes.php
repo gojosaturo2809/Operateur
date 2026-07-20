@@ -6,6 +6,7 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
+// Accueil / Redirection principale
 $routes->get('/', 'AuthController::login');
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -20,7 +21,7 @@ $routes->post('login',  'AuthController::login');
 $routes->get( 'operateur/login',  'AuthController::loginOperateur');
 $routes->post('operateur/login',  'AuthController::loginOperateur');
 
-// Déconnexion (client & opérateur)
+// Déconnexion générale (client & opérateur)
 $routes->get('logout', 'AuthController::logout');
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -40,27 +41,28 @@ $routes->group('client', function (RouteCollection $routes) {
 // ══════════════════════════════════════════════════════════════════════════════
 //  Espace Opérateur / Administration
 // ══════════════════════════════════════════════════════════════════════════════
+$routes->group('operateur', function (RouteCollection $routes) {
+    
+    // Situation des gains (Dashboard principal opérateur)
+    $routes->get('/',           'OperateurController::index');
+    $routes->get('dashboard',   'OperateurController::index');
+    $routes->get('gains',       'OperateurController::index');
 
-// Dashboard avec graphiques
-$routes->get('operateur',           'DashboardAdminController::index');
-$routes->get('operateur/dashboard', 'DashboardAdminController::index');
+    // Liste des comptes clients
+    $routes->get('clients',     'OperateurController::clients');
 
-// Clients
-$routes->get('operateur/clients',   'OperateurController::clients');
+    // CRUD : Préfixes autorisés
+    $routes->get( 'prefixes',               'OperateurController::prefixes');
+    $routes->post('prefixes/store',         'OperateurController::storePrefixe');
+    $routes->get( 'prefixes/delete/(:num)', 'OperateurController::deletePrefixe/$1');
 
-// Préfixes
-$routes->get( 'operateur/prefixes',               'OperateurController::prefixes');
-$routes->post('operateur/prefixes/add',           'OperateurController::ajouterPrefixe');
-$routes->get( 'operateur/prefixes/delete/(:num)', 'OperateurController::supprimerPrefixe/$1');
+    // CRUD : Types d'opération
+    $routes->get( 'types-operation',               'OperateurController::typesOperation');
+    $routes->post('types-operation/store',         'OperateurController::storeTypeOperation');
+    $routes->get( 'types-operation/delete/(:num)', 'OperateurController::deleteTypeOperation/$1');
 
-// Types d'opération
-$routes->get( 'operateur/types-operation',       'OperateurController::typesOperation');
-$routes->post('operateur/types-operation/add',   'OperateurController::ajouterType');
-
-// Barèmes de frais
-$routes->get( 'operateur/baremes',               'OperateurController::baremes');
-$routes->post('operateur/baremes/add',           'OperateurController::ajouterBareme');
-$routes->get( 'operateur/baremes/delete/(:num)', 'OperateurController::supprimerBareme/$1');
-
-// Situation des gains
-$routes->get('operateur/gains',     'OperateurController::index');
+    // CRUD : Barèmes de frais
+    $routes->get( 'baremes',               'OperateurController::baremes');
+    $routes->post('baremes/store',         'OperateurController::storeBareme');
+    $routes->get( 'baremes/delete/(:num)', 'OperateurController::deleteBareme/$1');
+});
