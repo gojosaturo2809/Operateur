@@ -6,52 +6,61 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-// ── Opérateur / Admin ──────────────────────────────────────────────────────
-
-// Dashboard admin (tableau de bord avec graphiques)
-$routes->get('operateur/dashboard', 'DashboardAdminController::index');
-
-// Redirection racine opérateur vers le dashboard
-$routes->get('/operateur', 'DashboardAdminController::index');
-
-
-$routes->get('operateur/gains',          'OperateurController::index');
-$routes->get('operateur/clients',        'OperateurController::clients');
-
-// Par défaut : redirection ou affichage de la page de connexion
 $routes->get('/', 'AuthController::login');
 
-// --- Authentification ---
-$routes->get('login', 'AuthController::login');
-$routes->post('login', 'AuthController::login');
+// ══════════════════════════════════════════════════════════════════════════════
+//  Authentification
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Client
+$routes->get( 'login',  'AuthController::login');
+$routes->post('login',  'AuthController::login');
+
+// Opérateur
+$routes->get( 'operateur/login',  'AuthController::loginOperateur');
+$routes->post('operateur/login',  'AuthController::loginOperateur');
+
+// Déconnexion (client & opérateur)
 $routes->get('logout', 'AuthController::logout');
 
-// --- Côté Client (Espace Utilisateur) ---
+// ══════════════════════════════════════════════════════════════════════════════
+//  Espace Client
+// ══════════════════════════════════════════════════════════════════════════════
 $routes->group('client', function (RouteCollection $routes) {
-    // Voir le solde (Page d'accueil du client)
-    $routes->get('dashboard', 'ClientController::index');
-    
-    // Dépôt
-    $routes->get('depot', 'ClientController::depot');
-    $routes->post('store-depot', 'ClientController::storeDepot');
-    
-    // Retrait
-    $routes->get('retrait', 'ClientController::retrait');
-    $routes->post('store-retrait', 'ClientController::storeRetrait');
-    
-    // Transfert
-    $routes->get('transfert', 'ClientController::transfert');
+    $routes->get( 'dashboard',       'ClientController::index');
+    $routes->get( 'depot',           'ClientController::depot');
+    $routes->post('store-depot',     'ClientController::storeDepot');
+    $routes->get( 'retrait',         'ClientController::retrait');
+    $routes->post('store-retrait',   'ClientController::storeRetrait');
+    $routes->get( 'transfert',       'ClientController::transfert');
     $routes->post('store-transfert', 'ClientController::storeTransfert');
-    
-    // Historique des opérations
-    $routes->get('historique', 'ClientController::historique');
+    $routes->get( 'historique',      'ClientController::historique');
 });
 
-// --- Côté Opérateur (Administration) ---
-$routes->group('operator', function (RouteCollection $routes) {
-    // Situation des gains (via les différents frais)
-    $routes->get('dashboard', 'OperatorController::dashboard');
-    
-    // Situation des comptes clients
-    $routes->get('clients', 'OperatorController::clients');
-});
+// ══════════════════════════════════════════════════════════════════════════════
+//  Espace Opérateur / Administration
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Dashboard avec graphiques
+$routes->get('operateur',           'DashboardAdminController::index');
+$routes->get('operateur/dashboard', 'DashboardAdminController::index');
+
+// Clients
+$routes->get('operateur/clients',   'OperateurController::clients');
+
+// Préfixes
+$routes->get( 'operateur/prefixes',               'OperateurController::prefixes');
+$routes->post('operateur/prefixes/add',           'OperateurController::ajouterPrefixe');
+$routes->get( 'operateur/prefixes/delete/(:num)', 'OperateurController::supprimerPrefixe/$1');
+
+// Types d'opération
+$routes->get( 'operateur/types-operation',       'OperateurController::typesOperation');
+$routes->post('operateur/types-operation/add',   'OperateurController::ajouterType');
+
+// Barèmes de frais
+$routes->get( 'operateur/baremes',               'OperateurController::baremes');
+$routes->post('operateur/baremes/add',           'OperateurController::ajouterBareme');
+$routes->get( 'operateur/baremes/delete/(:num)', 'OperateurController::supprimerBareme/$1');
+
+// Situation des gains
+$routes->get('operateur/gains',     'OperateurController::index');
