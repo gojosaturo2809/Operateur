@@ -16,17 +16,25 @@
             <h4 class="fw-bold mt-2">MobiMoney</h4>
             <p class="text-muted small">Entrez votre numéro pour continuer</p>
         </div>
+        
+        <!-- Affichage de l'erreur avec la clé 'erreur' de votre template -->
         <?php if (session()->getFlashdata('erreur')): ?>
-            <div class="alert alert-danger py-2 small"><?= session()->getFlashdata('erreur') ?></div>
+            <div class="alert alert-danger py-2 small"><?= esc(session()->getFlashdata('erreur')) ?></div>
         <?php endif; ?>
+        
         <form method="post" action="<?= base_url('login') ?>">
+            <?= csrf_field() ?> <!-- Sécurité CSRF CodeIgniter 4 -->
+            
             <div class="mb-3">
                 <label class="form-label small">Numéro de téléphone</label>
+                <!-- Utilisation du name 'numero_telephone' de votre template -->
                 <input type="text" name="numero_telephone" class="form-control form-control-lg" placeholder="033 xx xxx xx" required>
             </div>
             <button class="btn btn-primary btn-lg w-100">Continuer</button>
         </form>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
