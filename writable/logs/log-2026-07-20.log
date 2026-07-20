@@ -1,0 +1,30 @@
+CRITICAL - 2026-07-20 08:17:56 --> ErrorException: Undefined variable $telephone
+[Method: GET, Route: client/depot]
+in APPPATH/Views/layouts/main.php on line 30.
+ 1 APPPATH/Views/layouts/main.php(30): CodeIgniter\Debug\Exceptions->errorHandler()
+ 2 SYSTEMPATH/View/View.php(240): include('/home/herimino/S4/MrRojo/Operateur/app/Views/layouts/main.php')
+ 3 SYSTEMPATH/View/View.php(243): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+ 4 SYSTEMPATH/View/View.php(256): CodeIgniter\View\View->render()
+ 5 SYSTEMPATH/Common.php(1250): CodeIgniter\View\View->render()
+ 6 APPPATH/Controllers/ClientController.php(33): view()
+ 7 SYSTEMPATH/CodeIgniter.php(951): App\Controllers\ClientController->depot()
+ 8 SYSTEMPATH/CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController()
+ 9 SYSTEMPATH/CodeIgniter.php(340): CodeIgniter\CodeIgniter->handleRequest()
+10 SYSTEMPATH/Boot.php(417): CodeIgniter\CodeIgniter->run()
+11 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+12 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
+CRITICAL - 2026-07-20 08:24:44 --> ErrorException: Undefined variable $telephone
+[Method: GET, Route: client/retrait]
+in APPPATH/Views/layouts/main.php on line 30.
+ 1 APPPATH/Views/layouts/main.php(30): CodeIgniter\Debug\Exceptions->errorHandler()
+ 2 SYSTEMPATH/View/View.php(240): include('/home/herimino/S4/MrRojo/Operateur/app/Views/layouts/main.php')
+ 3 SYSTEMPATH/View/View.php(243): CodeIgniter\View\View->CodeIgniter\View\{closure}()
+ 4 SYSTEMPATH/View/View.php(256): CodeIgniter\View\View->render()
+ 5 SYSTEMPATH/Common.php(1250): CodeIgniter\View\View->render()
+ 6 APPPATH/Controllers/ClientController.php(82): view()
+ 7 SYSTEMPATH/CodeIgniter.php(951): App\Controllers\ClientController->retrait()
+ 8 SYSTEMPATH/CodeIgniter.php(497): CodeIgniter\CodeIgniter->runController()
+ 9 SYSTEMPATH/CodeIgniter.php(340): CodeIgniter\CodeIgniter->handleRequest()
+10 SYSTEMPATH/Boot.php(417): CodeIgniter\CodeIgniter->run()
+11 SYSTEMPATH/Boot.php(68): CodeIgniter\Boot::runCodeIgniter()
+12 FCPATH/index.php(59): CodeIgniter\Boot::bootWeb()
