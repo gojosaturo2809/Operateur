@@ -37,19 +37,19 @@ GROUP BY t.nom;
 
 ### 2.2 . Coté Client [Ok:Herimino]
 - Login automatique avec le numéro de téléphone (pas d’inscription au préalable)
-    - [encours] [2minute] **Page** : `app/Views/client/login.php` (Page d'authentification unique) 
+    - [ok] [2minute] **Page** : `app/Views/client/login.php` (Page d'authentification unique) 
 
-    - [encours] [5minute] **Fonction** : `AuthController::login()`
+    - [ok] [5minute] **Fonction** : `AuthController::login()`
 
-    - [encours] [7minute] **Base** : Contrôle du préfixe saisi via la table `Préfixe`. Si valide, recherche dans  `Client`. Si le compte n'existe pas encore, exécution automatique de `ClientModel::insert()` avant d'ouvrir la session utilisateur
+    - [ok] [7minute] **Base** : Contrôle du préfixe saisi via la table `Préfixe`. Si valide, recherche dans  `Client`. Si le compte n'existe pas encore, exécution automatique de `ClientModel::insert()` avant d'ouvrir la session utilisateur
 
-    - [encours] [10minute] **Integration** : Interface épurée et centrée (Mobile-first) avec un formulaire Bootstrap contenant un unique champ `<input type="tel">` et message d'erreur en cas de préfixe invalide
+    - [ok] [10minute] **Integration** : Interface épurée et centrée (Mobile-first) avec un formulaire Bootstrap contenant un unique champ `<input type="tel">` et message d'erreur en cas de préfixe invalide
 
 - Opérations
     - voir le solde
-        - **Page** : `app/Views/client/dashboard.php` (Accueil de l'espace client)
+        - [ok] [10minute] **Page** : `app/Views/client/dashboard.php` (Accueil de l'espace client)
         - **Fonction** : `ClientController::index()` invoquant `OperationModel::calculateSolde($id_client)`
-        - **Base** : Table `Operation` (Somme filtrée sur les opérations du client connecté)
+        - [ok] [10minute] **Base** : Table `Operation` (Somme filtrée sur les opérations du client connecté)
         - **Integration** : Bannière ou badge volumineux mis en relief en haut de page affichant le solde disponible formaté en Ariary (ex: `15 000 Ar`)
     - Dépôt 
         - **Page** : `app/Views/client/depot.php` (ou onglet/modal dédié)
