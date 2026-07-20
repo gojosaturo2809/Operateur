@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use App\Models\GainModel;
 use App\Models\ClientModel;
+use App\Models\OperationModel;
 use App\Models\TypeOperationModel;
 use App\Models\PrefixeModel;
 
@@ -40,6 +41,18 @@ class OperateurController extends BaseController
         $clients = $this->db->table('clients')
             ->orderBy('id', 'DESC')
             ->get()->getResultArray();
+
+        // Le solde n'est pas une colonne persistée : il dépend des opérations
+        // (dépôts, retraits et transferts reçus/émis). On le calcule donc avec
+        // la même règle que celle utilisée sur le tableau de bord du client.
+        $operationModel = new OperationModel();
+        foreach ($clients as &$client) {
+            $client['solde'] = $operationModel->calculateSolde(
+                (int) $client['id'],
+                (string) $client['numero_telephone']
+            );
+        }
+        unset($client);
 
         return view('operateur/clients', [
             'title'     => 'Comptes clients',
