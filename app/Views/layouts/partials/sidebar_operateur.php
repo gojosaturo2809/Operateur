@@ -44,6 +44,11 @@
             <i class="bi bi-graph-up-arrow"></i> Situation des gains
         </a>
 
+        <a href="<?= base_url('operateur/compensation') ?>"
+           class="nav-link <?= (uri_string() === 'operateur/compensation') ? 'active' : '' ?>">
+            <i class="bi bi-arrow-down-up"></i> Compensation / Clearing
+        </a>
+
         <hr>
 
         <a href="<?= base_url('logout') ?>" class="nav-link text-danger">

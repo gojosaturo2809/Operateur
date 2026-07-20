@@ -2,92 +2,202 @@
 --  MobiMoney — Schéma SQLite
 -- ============================================================
 
--- 1. Préfixes autorisés par l'opérateur (ex: 033, 037)
-CREATE TABLE prefixes (
-    id      INTEGER PRIMARY KEY AUTOINCREMENT,
-    prefixe TEXT NOT NULL UNIQUE
+-- 1. Opérateurs télécom (notre réseau + réseaux tiers)
+--    est_principal = 1  → notre propre réseau
+--    est_principal = 0  → opérateur tiers (inter-réseau)
+CREATE TABLE operateurs (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    nom                  TEXT    NOT NULL,
+    est_principal        INTEGER NOT NULL DEFAULT 0,
+    commission_inter_pct REAL    NOT NULL DEFAULT 0.00
 );
 
--- 2. Types d'opérations
+-- 2. Préfixes autorisés (liés à leur opérateur)
+CREATE TABLE prefixes (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    prefixe      TEXT    NOT NULL UNIQUE,
+    id_operateur INTEGER NOT NULL,
+    FOREIGN KEY (id_operateur) REFERENCES operateurs(id)
+);
+
+-- 3. Types d'opérations
 CREATE TABLE types_operation (
     id  INTEGER PRIMARY KEY AUTOINCREMENT,
-    nom TEXT NOT NULL UNIQUE  -- 'depot', 'retrait', 'transfert'
+    nom TEXT    NOT NULL UNIQUE   -- 'depot', 'retrait', 'transfert'
 );
 
--- 3. Barèmes de frais (modifiable par tranche)
+-- 4. Barèmes de frais (modifiable par tranche)
 CREATE TABLE bareme_frais (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     id_type_operation INTEGER NOT NULL,
-    montant_min       REAL NOT NULL,
-    montant_max       REAL NOT NULL,
-    frais             REAL NOT NULL,
+    montant_min       REAL    NOT NULL,
+    montant_max       REAL    NOT NULL,
+    frais             REAL    NOT NULL,
     FOREIGN KEY (id_type_operation) REFERENCES types_operation(id)
 );
 
--- 4. Clients (login automatique via numéro de téléphone)
+-- 5. Clients (login automatique via numéro de téléphone)
 CREATE TABLE clients (
     id               INTEGER PRIMARY KEY AUTOINCREMENT,
-    numero_telephone TEXT NOT NULL UNIQUE
+    numero_telephone TEXT    NOT NULL UNIQUE
 );
 
--- 5. Opérations (historique global)
+-- 6. Opérations (historique global)
 CREATE TABLE operations (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-    id_client           INTEGER NOT NULL,
-    id_type_operation   INTEGER NOT NULL,
-    numero_destinataire TEXT    NULL,     -- Rempli uniquement en cas de transfert
-    montant             REAL    NOT NULL,
-    frais_applique      REAL    NOT NULL, -- Frais figé au moment de la transaction
+    id_client           INTEGER  NOT NULL,
+    id_type_operation   INTEGER  NOT NULL,
+    numero_destinataire TEXT     NULL,
+    montant             REAL     NOT NULL,
+    frais_applique      REAL     NOT NULL DEFAULT 0,
+    inclure_frais_retrait INTEGER NOT NULL DEFAULT 0,
+    batch_envoi_multiple VARCHAR(50) NULL,
     date_operation      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_client)         REFERENCES clients(id),
     FOREIGN KEY (id_type_operation) REFERENCES types_operation(id)
 );
 
+-- 7. Administrateurs système (login backoffice)
+CREATE TABLE administrateurs (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    nom_utilisateur   TEXT    NOT NULL UNIQUE,
+    mot_de_passe_hash TEXT    NOT NULL,
+    date_creation     DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
 -- ============================================================
---  VUE : Situation des gains (retraits + transferts uniquement)
+--  VUES SQL
 -- ============================================================
+
+-- Vue globale : gains par type (retrait + transfert)
 CREATE VIEW vue_situation_gains AS
 SELECT
-    t.nom                  AS type_operation,
-    COUNT(o.id)            AS volume_transactions,
-    SUM(o.montant)         AS volume_financier,
-    SUM(o.frais_applique)  AS total_gains
+    t.nom                       AS type_operation,
+    COUNT(o.id)                 AS volume_transactions,
+    COALESCE(SUM(o.montant), 0) AS volume_financier,
+    COALESCE(SUM(o.frais_applique), 0) AS total_gains
 FROM operations o
 JOIN types_operation t ON o.id_type_operation = t.id
 WHERE t.nom IN ('retrait', 'transfert')
 GROUP BY t.nom;
 
--- ============================================================
---  DONNÉES INITIALES
--- ============================================================
+-- Vue gains réseau local :
+-- Retraits + transferts dont le destinataire est sur notre réseau principal
+CREATE VIEW vue_gains_local AS
+SELECT
+    t.nom AS type_operation,
+    COUNT(o.id) AS volume_transactions,
+    COALESCE(SUM(o.montant), 0) AS volume_financier,
+    COALESCE(SUM(o.frais_applique), 0) AS total_gains
+FROM operations o
+JOIN types_operation t
+    ON o.id_type_operation = t.id
+LEFT JOIN prefixes p
+    ON p.prefixe = substr(o.numero_destinataire, 1, 3)
+LEFT JOIN operateurs op
+    ON p.id_operateur = op.id
+WHERE
+    t.nom = 'retrait'
+    OR (
+        t.nom = 'transfert'
+        AND (
+            o.numero_destinataire IS NULL
+            OR op.est_principal = 1
+        )
+    )
+GROUP BY t.nom;
 
+-- Vue gains inter-opérateurs :
+-- Transferts vers des réseaux tiers enregistrés
+CREATE VIEW vue_gains_inter AS
+SELECT
+    op.id AS operateur_id,
+    op.nom AS operateur_tiers,
+    op.commission_inter_pct,
+    COUNT(o.id) AS volume_transactions,
+    COALESCE(SUM(o.montant),0) AS volume_financier,
+    COALESCE(SUM(o.frais_applique),0) AS total_gains
+FROM operations o
+JOIN types_operation t
+    ON o.id_type_operation = t.id
+JOIN prefixes p
+    ON p.prefixe = substr(o.numero_destinataire,1,3)
+JOIN operateurs op
+    ON p.id_operateur = op.id
+WHERE
+    t.nom = 'transfert'
+    AND op.est_principal = 0
+GROUP BY op.id;
 
-INSERT INTO operateurs (nom_utilisateur, mot_de_passe_hash)
+CREATE VIEW vue_gains_inter_inconnus AS
+SELECT
+    COUNT(o.id) AS volume_transactions,
+    COALESCE(SUM(o.montant),0) AS volume_financier,
+    COALESCE(SUM(o.frais_applique),0) AS total_gains
+FROM operations o
+JOIN types_operation t
+    ON o.id_type_operation = t.id
+WHERE
+    t.nom = 'transfert'
+    AND o.numero_destinataire IS NOT NULL
+    AND substr(o.numero_destinataire,1,3) NOT IN
+    (
+        SELECT prefixe
+        FROM prefixes
+    );
+
+INSERT INTO administrateurs (nom_utilisateur, mot_de_passe_hash)
 VALUES (
     'admin',
     '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
 );
+-- Remplacer par : php -r "echo password_hash('votre_mdp', PASSWORD_BCRYPT);"
 
+CREATE VIEW vue_compensation_operateurs AS
+SELECT
 
-CREATE TABLE operateurs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nom VARCHAR(50) NOT NULL,               -- Ex: 'MonRéseau', 'Telma', 'Orange', 'Airtel'
-    est_principal BOOLEAN DEFAULT FALSE,    -- TRUE pour votre propre service, FALSE pour les autres
-    commission_inter_pct DECIMAL(5, 2) DEFAULT 0.00 -- Le % de commission en plus pour les transferts sortants
-);
+op.id AS operateur_id,
 
-ALTER TABLE prefixes ADD COLUMN id_operateur INT NOT NULL;
-ALTER TABLE prefixes ADD CONSTRAINT fk_prefixes_operateurs FOREIGN KEY (id_operateur) REFERENCES operateurs(id);
+op.nom AS operateur_nom,
 
-ALTER TABLE operations 
-    -- 1. Permet de savoir vers quel opérateur l'argent est parti (pour la page compensation/clearing)
-    ADD COLUMN id_operateur_destination INT DEFAULT NULL, 
-    
-    -- 2. Flag (0 ou 1) pour savoir si le client a coché "Inclure les frais de retrait"
-    ADD COLUMN inclure_frais_retrait TINYINT(1) DEFAULT 0, 
-    
-    -- 3. Un identifiant unique (UUID ou Timestamp) pour regrouper les transactions issues d'un envoi multiple divisé
-    ADD COLUMN batch_envoi_multiple VARCHAR(50) DEFAULT NULL;
+op.commission_inter_pct,
 
-ALTER TABLE operations ADD CONSTRAINT fk_operations_operateur_dest FOREIGN KEY (id_operateur_destination) REFERENCES operateurs(id);
+COUNT(o.id) AS nb_transferts,
+
+SUM(o.montant) AS montant_transfere,
+
+SUM(
+o.montant*op.commission_inter_pct/100.0
+)
+
+AS commission_a_reverser,
+
+SUM(o.frais_applique)
+
+AS frais_percus,
+
+MIN(o.date_operation)
+
+AS premiere_operation,
+
+MAX(o.date_operation)
+
+AS derniere_operation
+
+FROM operations o
+
+JOIN types_operation t
+ON t.id=o.id_type_operation
+
+JOIN prefixes p
+ON p.prefixe=substr(o.numero_destinataire,1,3)
+
+JOIN operateurs op
+ON op.id=p.id_operateur
+
+WHERE
+
+t.nom='transfert'
+AND op.est_principal=0
+
+GROUP BY op.id;

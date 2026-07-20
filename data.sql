@@ -1,61 +1,209 @@
-INSERT INTO prefixes (id, prefixe) VALUES 
-(1, '033'),
-(2, '037');
+-- ============================================================
+-- DONNEES DE TEST MOBIMONEY
+-- ============================================================
 
--- Insertion des types de transactions indispensables
-INSERT INTO types_operation (id, nom) VALUES 
-(1, 'depot'),
-(2, 'retrait'),
-(3, 'transfert');
+PRAGMA foreign_keys = ON;
 
--- Insertion du barème d'exemple complet pour les RETRAITS (id_type_operation = 2)
-INSERT INTO bareme_frais (id_type_operation, montant_min, montant_max, frais) VALUES
-(2, 100, 1000, 50),
-(2, 1001, 5000, 50),
-(2, 5001, 10000, 100),
-(2, 10001, 25000, 200),
-(2, 25001, 50000, 400),
-(2, 50001, 100000, 800),
-(2, 100001, 250000, 1500),
-(2, 250001, 500000, 1500),
-(2, 500001, 1000000, 2500),
-(2, 1000001, 2000000, 3000);
 
--- Insertion du même barème pour les TRANSFERTS (id_type_operation = 3)
-INSERT INTO bareme_frais (id_type_operation, montant_min, montant_max, frais) VALUES
-(3, 100, 1000, 50),
-(3, 1001, 5000, 50),
-(3, 5001, 10000, 100),
-(3, 10001, 25000, 200),
-(3, 25001, 50000, 400),
-(3, 50001, 100000, 800),
-(3, 100001, 250000, 1500),
-(3, 250001, 500000, 1500),
-(3, 500001, 1000000, 2500),
-(3, 1000001, 2000000, 3000);
+-- ============================================================
+-- 1. OPERATEURS
+-- ============================================================
 
--- Pré-enregistrement de quelques clients avec des numéros valides
-INSERT INTO clients (id, numero_telephone) VALUES 
-(1, '0331234567'),
-(2, '0379876543'),
-(3, '0331112223');
+INSERT INTO operateurs (nom, est_principal, commission_inter_pct)
+VALUES
+('MobiMoney', 1, 0.00),
+('Telma Money', 0, 2.50),
+('Orange Money', 0, 3.00),
+('Airtel Money', 0, 2.00);
 
--- Création d'un historique de transactions fictives pour alimenter les calculs de gains et soldes
-INSERT INTO operations (id_client, id_type_operation, numero_destinataire, montant, frais_applique, date_operation) VALUES
--- Client 1 effectue un dépôt initial (Aucun frais)
-(1, 1, NULL, 50000.0, 0.0, '2026-07-20 08:00:00'),
 
--- Client 1 effectue un transfert de 15 000 Ar vers Client 2 (Tranche 10001-25000 -> Frais: 200 Ar)
-(1, 3, '0379876543', 15000.0, 200.0, '2026-07-20 08:30:00'),
+-- ============================================================
+-- 2. PREFIXES
+-- ============================================================
 
--- Client 2 effectue un dépôt initial (Aucun frais)
-(2, 1, NULL, 10000.0, 0.0, '2026-07-20 09:00:00'),
+-- Réseau principal MobiMoney
+INSERT INTO prefixes(prefixe, id_operateur)
+VALUES
+('033', 1),
+('034', 1);
 
--- Client 2 effectue un retrait de 5 000 Ar en agence (Tranche 1001-5000 -> Frais: 50 Ar)
-(2, 2, NULL, 5000.0, 50.0, '2026-07-20 09:15:00'),
+-- Réseaux tiers
+INSERT INTO prefixes(prefixe, id_operateur)
+VALUES
+('038', 2),
+('032', 3),
+('037', 4);
 
--- Client 3 effectue un dépôt massif (Aucun frais)
-(3, 1, NULL, 150000.0, 0.0, '2026-07-20 09:30:00'),
 
--- Client 3 effectue un retrait de 120 000 Ar (Tranche 100001-250000 -> Frais: 1500 Ar)
-(3, 2, NULL, 120000.0, 1500.0, '2026-07-20 10:00:00');
+-- ============================================================
+-- 3. TYPES OPERATIONS
+-- ============================================================
+
+INSERT INTO types_operation(nom)
+VALUES
+('depot'),
+('retrait'),
+('transfert');
+
+
+-- ============================================================
+-- 4. BAREMES FRAIS
+-- ============================================================
+
+-- Dépôt
+INSERT INTO bareme_frais
+(id_type_operation,montant_min,montant_max,frais)
+VALUES
+(1,0,10000,200),
+(1,10001,50000,500),
+(1,50001,200000,1000);
+
+
+-- Retrait
+INSERT INTO bareme_frais
+(id_type_operation,montant_min,montant_max,frais)
+VALUES
+(2,0,10000,300),
+(2,10001,50000,800),
+(2,50001,200000,1500);
+
+
+-- Transfert
+INSERT INTO bareme_frais
+(id_type_operation,montant_min,montant_max,frais)
+VALUES
+(3,0,10000,500),
+(3,10001,50000,1000),
+(3,50001,200000,2000);
+
+
+
+-- ============================================================
+-- 5. CLIENTS
+-- ============================================================
+
+INSERT INTO clients(numero_telephone)
+VALUES
+('0331200001'),
+('0342200002'),
+('0383300003'),
+('0324400004'),
+('0375500005'),
+('0336600006');
+
+
+-- ============================================================
+-- 6. OPERATIONS
+-- ============================================================
+
+
+-- ======================
+-- DEPOTS
+-- ======================
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(1,1,NULL,5000,200),
+(2,1,NULL,25000,500),
+(3,1,NULL,100000,1000);
+
+
+-- ======================
+-- RETRAITS
+-- ======================
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(1,2,NULL,10000,300),
+(2,2,NULL,40000,800),
+(3,2,NULL,80000,1500),
+(4,2,NULL,150000,1500);
+
+
+
+-- ======================
+-- TRANSFERT LOCAL
+-- destinataire MobiMoney
+-- préfixes 033 / 034
+-- ======================
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(1,3,'0337700007',5000,500),
+
+(2,3,'0348800008',25000,1000),
+
+(6,3,'0339900009',75000,2000);
+
+
+
+-- ======================
+-- TRANSFERT INTER OPERATEURS
+-- Telma 038
+-- ======================
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(1,3,'0381100011',10000,500),
+
+(2,3,'0382200022',50000,1000);
+
+
+
+-- Orange 032
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(3,3,'0323300033',20000,1000),
+
+(4,3,'0324400044',100000,2000);
+
+
+
+-- Airtel 037
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(5,3,'0375500055',15000,500),
+
+(6,3,'0376600066',80000,2000);
+
+
+
+-- ======================
+-- TRANSFERT VERS PREFIXE INCONNU
+-- ======================
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique)
+VALUES
+
+(1,3,'0399900000',30000,1000);
+
+
+
+-- ============================================================
+-- VERIFICATIONS
+-- ============================================================
+
+SELECT * FROM vue_situation_gains;
+
+SELECT * FROM vue_gains_local;
+
+SELECT * FROM vue_gains_inter;
+
+SELECT * FROM vue_gains_inter_inconnus;
+
+SELECT * FROM vue_compensation_operateurs;
