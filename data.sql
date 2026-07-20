@@ -1,61 +1,135 @@
-INSERT INTO prefixes (id, prefixe) VALUES 
-(1, '033'),
-(2, '037');
+-- ============================================================
+-- OPERATEURS
+-- ============================================================
 
--- Insertion des types de transactions indispensables
-INSERT INTO types_operation (id, nom) VALUES 
-(1, 'depot'),
-(2, 'retrait'),
-(3, 'transfert');
+DELETE FROM operateurs WHERE id > 1;
 
--- Insertion du barème d'exemple complet pour les RETRAITS (id_type_operation = 2)
-INSERT INTO bareme_frais (id_type_operation, montant_min, montant_max, frais) VALUES
-(2, 100, 1000, 50),
-(2, 1001, 5000, 50),
-(2, 5001, 10000, 100),
-(2, 10001, 25000, 200),
-(2, 25001, 50000, 400),
-(2, 50001, 100000, 800),
-(2, 100001, 250000, 1500),
-(2, 250001, 500000, 1500),
-(2, 500001, 1000000, 2500),
-(2, 1000001, 2000000, 3000);
+INSERT INTO operateurs (nom, est_principal, commission_inter_pct) VALUES
+('Orange',0,1.50),
+('Airtel',0,2.00),
+('Telma',0,1.75);
 
--- Insertion du même barème pour les TRANSFERTS (id_type_operation = 3)
-INSERT INTO bareme_frais (id_type_operation, montant_min, montant_max, frais) VALUES
-(3, 100, 1000, 50),
-(3, 1001, 5000, 50),
-(3, 5001, 10000, 100),
-(3, 10001, 25000, 200),
-(3, 25001, 50000, 400),
-(3, 50001, 100000, 800),
-(3, 100001, 250000, 1500),
-(3, 250001, 500000, 1500),
-(3, 500001, 1000000, 2500),
-(3, 1000001, 2000000, 3000);
+-- ============================================================
+-- PREFIXES
+-- ============================================================
 
--- Pré-enregistrement de quelques clients avec des numéros valides
-INSERT INTO clients (id, numero_telephone) VALUES 
-(1, '0331234567'),
-(2, '0379876543'),
-(3, '0331112223');
+INSERT INTO prefixes(prefixe,id_operateur) VALUES
+('033',1),
+('037',1),
 
--- Création d'un historique de transactions fictives pour alimenter les calculs de gains et soldes
-INSERT INTO operations (id_client, id_type_operation, numero_destinataire, montant, frais_applique, date_operation) VALUES
--- Client 1 effectue un dépôt initial (Aucun frais)
-(1, 1, NULL, 50000.0, 0.0, '2026-07-20 08:00:00'),
+('032',2),
+('038',2),
 
--- Client 1 effectue un transfert de 15 000 Ar vers Client 2 (Tranche 10001-25000 -> Frais: 200 Ar)
-(1, 3, '0379876543', 15000.0, 200.0, '2026-07-20 08:30:00'),
+('034',3),
 
--- Client 2 effectue un dépôt initial (Aucun frais)
-(2, 1, NULL, 10000.0, 0.0, '2026-07-20 09:00:00'),
+('039',4);
 
--- Client 2 effectue un retrait de 5 000 Ar en agence (Tranche 1001-5000 -> Frais: 50 Ar)
-(2, 2, NULL, 5000.0, 50.0, '2026-07-20 09:15:00'),
+-- ============================================================
+-- CLIENTS
+-- ============================================================
 
--- Client 3 effectue un dépôt massif (Aucun frais)
-(3, 1, NULL, 150000.0, 0.0, '2026-07-20 09:30:00'),
+INSERT INTO clients(numero_telephone) VALUES
+('0331234567'),
+('0339876543'),
+('0371111111'),
+('0372222222'),
+('0333333333'),
+('0374444444'),
+('0335555555'),
+('0376666666'),
+('0337777777'),
+('0378888888');
 
--- Client 3 effectue un retrait de 120 000 Ar (Tranche 100001-250000 -> Frais: 1500 Ar)
-(3, 2, NULL, 120000.0, 1500.0, '2026-07-20 10:00:00');
+-- ============================================================
+-- BAREME DES FRAIS
+-- ============================================================
+
+-- dépôt
+
+INSERT INTO bareme_frais(id_type_operation,montant_min,montant_max,frais)
+VALUES
+(1,0,50000,0),
+(1,50001,100000,0),
+(1,100001,99999999,0);
+
+-- retrait
+
+INSERT INTO bareme_frais(id_type_operation,montant_min,montant_max,frais)
+VALUES
+(2,0,10000,200),
+(2,10001,50000,500),
+(2,50001,100000,1000),
+(2,100001,99999999,2000);
+
+-- transfert
+
+INSERT INTO bareme_frais(id_type_operation,montant_min,montant_max,frais)
+VALUES
+(3,0,10000,150),
+(3,10001,50000,400),
+(3,50001,100000,800),
+(3,100001,99999999,1500);
+
+-- ============================================================
+-- OPERATIONS
+-- ============================================================
+
+INSERT INTO operations
+(id_client,id_type_operation,numero_destinataire,montant,frais_applique,date_operation)
+VALUES
+
+-- DEPOTS
+
+(1,1,NULL,10000,0,'2026-01-10'),
+(2,1,NULL,25000,0,'2026-01-15'),
+(3,1,NULL,50000,0,'2026-02-02'),
+(4,1,NULL,100000,0,'2026-02-10'),
+(5,1,NULL,20000,0,'2026-03-01'),
+(6,1,NULL,30000,0,'2026-03-12'),
+(7,1,NULL,150000,0,'2026-04-05'),
+(8,1,NULL,60000,0,'2026-05-09'),
+(9,1,NULL,120000,0,'2026-06-11'),
+(10,1,NULL,5000,0,'2026-07-02'),
+
+-- RETRAITS
+
+(1,2,NULL,5000,200,'2026-01-12'),
+(2,2,NULL,10000,200,'2026-01-18'),
+(3,2,NULL,25000,500,'2026-02-05'),
+(4,2,NULL,40000,500,'2026-02-15'),
+(5,2,NULL,70000,1000,'2026-03-08'),
+(6,2,NULL,150000,2000,'2026-03-28'),
+(7,2,NULL,9000,200,'2026-04-09'),
+(8,2,NULL,55000,1000,'2026-05-18'),
+(9,2,NULL,100000,1000,'2026-06-15'),
+(10,2,NULL,200000,2000,'2026-07-12'),
+
+-- TRANSFERTS LOCAUX
+
+(1,3,'0339999999',15000,400,'2026-01-20'),
+(2,3,'0378888888',25000,400,'2026-01-25'),
+(3,3,'0337777777',70000,800,'2026-02-20'),
+(4,3,'0376666666',120000,1500,'2026-03-03'),
+(5,3,'0335555555',9000,150,'2026-03-15'),
+(6,3,'0374444444',45000,400,'2026-04-01'),
+(7,3,'0332222222',50000,400,'2026-04-15'),
+(8,3,'0371234567',100000,800,'2026-05-21'),
+
+-- TRANSFERTS ORANGE
+
+(1,3,'0321234567',20000,400,'2026-05-25'),
+(2,3,'0387654321',80000,800,'2026-05-28'),
+(3,3,'0325555555',150000,1500,'2026-06-02'),
+
+-- TRANSFERTS AIRTEL
+
+(4,3,'0341234567',18000,400,'2026-06-08'),
+(5,3,'0347654321',40000,400,'2026-06-18'),
+(6,3,'0349999999',130000,1500,'2026-06-24'),
+
+-- TRANSFERTS TELMA
+
+(7,3,'0391234567',35000,400,'2026-07-01'),
+(8,3,'0392222222',65000,800,'2026-07-05'),
+(9,3,'0393333333',100000,800,'2026-07-10'),
+(10,3,'0394444444',180000,1500,'2026-07-15');
