@@ -46,6 +46,14 @@
                 >
             </div>
 
+            <!-- Badge réseau détecté -->
+            <div id="badgeReseau" style="display:none;margin-top:-.5rem;margin-bottom:.9rem;">
+                <span id="badgeReseauLabel"
+                      style="display:inline-flex;align-items:center;gap:.375rem;
+                             padding:.25rem .65rem;border-radius:2rem;font-size:.75rem;font-weight:600;">
+                </span>
+            </div>
+
             <!-- Montant -->
             <label class="client-field-label" for="montantInput">Montant à envoyer</label>
             <div class="client-amount-wrap">
@@ -63,16 +71,25 @@
                 <span class="client-amount-unit">Ar</span>
             </div>
 
-            <div id="optionFraisRetrait" class="form-check mt-3 mb-3">
-                <input class="form-check-input" type="checkbox" value="1"
-                       id="inclureFraisRetrait" name="inclure_frais_retrait">
-                <label class="form-check-label" for="inclureFraisRetrait">
-                    Prendre en charge les frais de retrait du destinataire
+            <!-- Option frais de retrait — visible uniquement sur réseau local -->
+            <div id="optionFraisRetrait" style="display:none;margin:.75rem 0 .5rem;">
+                <label style="display:flex;align-items:flex-start;gap:.6rem;cursor:pointer;">
+                    <input type="checkbox" value="1"
+                           id="inclureFraisRetrait" name="inclure_frais_retrait"
+                           style="margin-top:.2rem;accent-color:#3b82f6;
+                                  width:1.1rem;height:1.1rem;flex-shrink:0;">
+                    <div>
+                        <span style="font-size:.875rem;font-weight:600;color:#0f172a;">
+                            Prendre en charge les frais de retrait
+                        </span>
+                        <p style="font-size:.75rem;color:#64748b;margin:.15rem 0 0;">
+                            Le destinataire pourra retirer sans payer de frais supplémentaires.
+                        </p>
+                    </div>
                 </label>
-                <div class="form-text">Le destinataire recevra le montant net. Disponible uniquement sur le réseau principal.</div>
             </div>
 
-            <!-- Récapitulatif frais -->
+            <!-- Récapitulatif -->
             <div class="client-recap">
                 <div class="client-recap-row">
                     <span>Montant envoyé</span>
@@ -91,14 +108,14 @@
                     <span id="txtFraisRetrait" style="color:#f59e0b;font-weight:600;">—</span>
                 </div>
                 <div class="client-recap-row client-recap-total">
-                    <span>Total opération</span>
+                    <span>Total débité</span>
                     <span id="txtTotal" style="color:#3b82f6;">—</span>
                 </div>
             </div>
 
             <div id="warnBareme" class="client-warn" style="display:none;">
                 <i class="bi bi-exclamation-triangle-fill"></i>
-                Montant hors barème — transfert indisponible.
+                <span id="warnMessage">Montant hors barème — transfert indisponible.</span>
             </div>
 
             <button type="submit" id="btnSubmit" class="client-btn" style="background:#3b82f6;">
@@ -114,99 +131,166 @@
 
 <?= $this->section('scripts') ?>
 <script>
-const baremes  = <?= $baremes ?? '[]' ?>;
-const baremesRetrait = <?= $baremesRetrait ?? '[]' ?>;
+/* ── Données injectées depuis PHP ──────────────────────────────── */
+const baremes            = <?= $baremes          ?? '[]' ?>;
+const baremesRetrait     = <?= $baremesRetrait   ?? '[]' ?>;
 const prefixesOperateurs = <?= $prefixesOperateurs ?? '[]' ?>;
-const input    = document.getElementById('montantInput');
-const destinataire = document.getElementById('numero_destinataire');
-const inclureFraisRetrait = document.getElementById('inclureFraisRetrait');
-const optionFraisRetrait = document.getElementById('optionFraisRetrait');
-const recapM   = document.getElementById('recapMontant');
-const txtFrais = document.getElementById('txtFrais');
-const ligneCommission = document.getElementById('ligneCommission');
-const txtCommission = document.getElementById('txtCommission');
-const ligneFraisRetrait = document.getElementById('ligneFraisRetrait');
-const txtFraisRetrait = document.getElementById('txtFraisRetrait');
-const txtTotal = document.getElementById('txtTotal');
-const warn     = document.getElementById('warnBareme');
-const btn      = document.getElementById('btnSubmit');
 
-function fmt(n) { return n.toLocaleString('fr-FR') + ' Ar'; }
+/* ── Références DOM ────────────────────────────────────────────── */
+const inputMontant        = document.getElementById('montantInput');
+const inputDest           = document.getElementById('numero_destinataire');
+const checkFraisRetrait   = document.getElementById('inclureFraisRetrait');
+const blockFraisRetrait   = document.getElementById('optionFraisRetrait');
+const badgeReseau         = document.getElementById('badgeReseau');
+const badgeReseauLabel    = document.getElementById('badgeReseauLabel');
 
-function operateurDestination() {
-    const numero = destinataire.value.replace(/\D/g, '');
-    return prefixesOperateurs.find(p => p.prefixe === numero.slice(0, 3)) || null;
+const elRecapMontant      = document.getElementById('recapMontant');
+const elFrais             = document.getElementById('txtFrais');
+const elLigneCommission   = document.getElementById('ligneCommission');
+const elCommission        = document.getElementById('txtCommission');
+const elLigneFraisRetrait = document.getElementById('ligneFraisRetrait');
+const elFraisRetrait      = document.getElementById('txtFraisRetrait');
+const elTotal             = document.getElementById('txtTotal');
+const elWarn              = document.getElementById('warnBareme');
+const elWarnMsg           = document.getElementById('warnMessage');
+const btn                 = document.getElementById('btnSubmit');
+
+/* ── Helpers ───────────────────────────────────────────────────── */
+function fmt(n) {
+    return n.toLocaleString('fr-FR') + ' Ar';
 }
 
+function trouverBareme(liste, montant) {
+    return liste.find(
+        b => montant >= parseFloat(b.montant_min) && montant <= parseFloat(b.montant_max)
+    ) || null;
+}
+
+function afficherWarn(msg) {
+    elWarnMsg.textContent = msg;
+    elWarn.style.display  = '';
+}
+
+function cacherWarn() {
+    elWarn.style.display = 'none';
+}
+
+function getOperateur() {
+    /* Extrait les chiffres, prend les 3 premiers pour le préfixe */
+    const num = inputDest.value.replace(/\D/g, '');
+    if (num.length < 3) return null;
+    return prefixesOperateurs.find(p => p.prefixe === num.slice(0, 3)) || null;
+}
+
+/* ── Recalcul principal ────────────────────────────────────────── */
 function recalculer() {
-    const montant = parseFloat(input.value) || 0;
-    let frais = 0, trouve = false, fraisRetrait = 0;
-    const operateur = operateurDestination();
-    const reseauPrincipal = operateur && Number(operateur.est_principal) === 1;
+    const montant  = parseFloat(inputMontant.value) || 0;
+    const operateur = getOperateur();
+    const estLocal  = operateur !== null && Number(operateur.est_principal) === 1;
+    const estTiers  = operateur !== null && !estLocal;
 
-    // Hors réseau principal, l'option est désactivée et ne sera pas envoyée.
-    // La case reste disponible tant qu'un préfixe n'est pas encore reconnu.
-    // Elle n'est désactivée que lorsqu'un opérateur tiers est identifié.
-    const estOperateurTiers = operateur && !reseauPrincipal;
-    inclureFraisRetrait.disabled = estOperateurTiers;
-    if (estOperateurTiers) inclureFraisRetrait.checked = false;
-    optionFraisRetrait.style.opacity = estOperateurTiers ? '.55' : '1';
-    ligneCommission.style.display = 'none';
-    ligneFraisRetrait.style.display = 'none';
-
-    if (montant > 0) {
-        for (const b of baremes) {
-            if (montant >= b.montant_min && montant <= b.montant_max) {
-                frais = parseFloat(b.frais);
-                trouve = true;
-                break;
-            }
+    /* ─ Badge réseau ─────────────────────────────────────────── */
+    if (operateur) {
+        badgeReseau.style.display = '';
+        if (estLocal) {
+            badgeReseauLabel.style.cssText =
+                'display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .65rem;' +
+                'border-radius:2rem;font-size:.75rem;font-weight:600;' +
+                'background:#ecfdf5;color:#059669;border:1px solid #a7f3d0;';
+            badgeReseauLabel.innerHTML =
+                '<i class="bi bi-house-fill" style="font-size:.65rem;"></i>' +
+                ' Réseau local — ' + operateur.operateur_nom;
+        } else {
+            badgeReseauLabel.style.cssText =
+                'display:inline-flex;align-items:center;gap:.375rem;padding:.25rem .65rem;' +
+                'border-radius:2rem;font-size:.75rem;font-weight:600;' +
+                'background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe;';
+            badgeReseauLabel.innerHTML =
+                '<i class="bi bi-broadcast" style="font-size:.65rem;"></i>' +
+                ' Réseau tiers — ' + operateur.operateur_nom;
         }
-    }
-
-    if (montant > 0 && trouve) {
-        if (inclureFraisRetrait.checked && reseauPrincipal) {
-            const retrait = baremesRetrait.find(b => montant >= b.montant_min && montant <= b.montant_max);
-            if (!retrait) {
-                txtFraisRetrait.textContent = 'Hors barème';
-                ligneFraisRetrait.style.display = '';
-                warn.textContent = 'Montant hors barème de retrait — transfert indisponible.';
-                warn.style.display = '';
-                btn.disabled = true;
-                return;
-            }
-            fraisRetrait = parseFloat(retrait.frais);
-        }
-        recapM.textContent   = fmt(montant);
-        txtFrais.textContent = fmt(frais);
-        const commission = operateur && !reseauPrincipal
-            ? Math.round(montant * (Number(operateur.commission_inter_pct) || 0)) / 100
-            : 0;
-        ligneCommission.style.display = commission > 0 ? '' : 'none';
-        txtCommission.textContent = fmt(commission);
-        ligneFraisRetrait.style.display = inclureFraisRetrait.checked && reseauPrincipal ? '' : 'none';
-        txtFraisRetrait.textContent = fmt(fraisRetrait);
-        txtTotal.textContent = fmt(montant + frais + commission + fraisRetrait);
-        warn.style.display   = 'none';
-        btn.disabled         = false;
-    } else if (montant > 0) {
-        recapM.textContent   = fmt(montant);
-        txtFrais.textContent = 'Hors barème';
-        txtTotal.textContent = '—';
-        warn.style.display   = '';
-        btn.disabled         = true;
     } else {
-        recapM.textContent   = '—';
-        txtFrais.textContent = '—';
-        txtTotal.textContent = '—';
-        warn.style.display   = 'none';
-        btn.disabled         = false;
+        badgeReseau.style.display = 'none';
     }
+
+    /* ─ Option frais de retrait : visible seulement réseau local ─ */
+    blockFraisRetrait.style.display = estLocal ? '' : 'none';
+    if (!estLocal) {
+        checkFraisRetrait.checked = false;
+    }
+
+    /* ─ Reset lignes récap ───────────────────────────────────── */
+    elLigneCommission.style.display   = 'none';
+    elLigneFraisRetrait.style.display = 'none';
+    cacherWarn();
+
+    /* ─ Pas de montant ───────────────────────────────────────── */
+    if (montant <= 0) {
+        elRecapMontant.textContent = '—';
+        elFrais.textContent        = '—';
+        elTotal.textContent        = '—';
+        btn.disabled               = false;
+        return;
+    }
+
+    /* ─ Barème de transfert ──────────────────────────────────── */
+    const baremeTransfert = trouverBareme(baremes, montant);
+    if (!baremeTransfert) {
+        elRecapMontant.textContent = fmt(montant);
+        elFrais.textContent        = 'Hors barème';
+        elTotal.textContent        = '—';
+        afficherWarn('Ce montant est hors barème — transfert indisponible.');
+        btn.disabled = true;
+        return;
+    }
+
+    const fraisEnvoi = parseFloat(baremeTransfert.frais);
+
+    /* ─ Commission inter-opérateur ───────────────────────────── */
+    let commission = 0;
+    if (estTiers) {
+        const taux = parseFloat(operateur.commission_inter_pct) || 0;
+        /* Même calcul que le serveur : round(montant * taux / 100, 2) */
+        commission = Math.round(montant * taux) / 100;
+        if (commission > 0) {
+            elLigneCommission.style.display = '';
+            elCommission.textContent        = fmt(commission);
+        }
+    }
+
+    /* ─ Frais de retrait pris en charge ─────────────────────── */
+    let fraisRetrait = 0;
+    if (checkFraisRetrait.checked && estLocal) {
+        const baremeRetrait = trouverBareme(baremesRetrait, montant);
+        if (!baremeRetrait) {
+            /* Hors barème de retrait : tout afficher puis bloquer */
+            elRecapMontant.textContent        = fmt(montant);
+            elFrais.textContent               = fmt(fraisEnvoi);
+            elLigneFraisRetrait.style.display = '';
+            elFraisRetrait.textContent        = 'Hors barème';
+            elTotal.textContent               = '—';
+            afficherWarn("Ce montant est hors barème de retrait — décochez l'option ou changez le montant.");
+            btn.disabled = true;
+            return;
+        }
+        fraisRetrait = parseFloat(baremeRetrait.frais);
+        elLigneFraisRetrait.style.display = '';
+        elFraisRetrait.textContent        = fmt(fraisRetrait);
+    }
+
+    /* ─ Tout est OK : afficher le récap complet ─────────────── */
+    elRecapMontant.textContent = fmt(montant);
+    elFrais.textContent        = fmt(fraisEnvoi);
+    elTotal.textContent        = fmt(montant + fraisEnvoi + commission + fraisRetrait);
+    btn.disabled               = false;
 }
 
-input.addEventListener('input', recalculer);
-destinataire.addEventListener('input', recalculer);
-inclureFraisRetrait.addEventListener('change', recalculer);
+/* ── Écouteurs ─────────────────────────────────────────────────── */
+inputMontant.addEventListener('input', recalculer);
+inputDest.addEventListener('input', recalculer);
+checkFraisRetrait.addEventListener('change', recalculer);
+
+/* Init */
 recalculer();
 </script>
 <?= $this->endSection() ?>
