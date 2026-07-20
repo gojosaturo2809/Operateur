@@ -5,7 +5,9 @@
 -- 1. Préfixes autorisés par l'opérateur (ex: 033, 037)
 CREATE TABLE prefixes (
     id      INTEGER PRIMARY KEY AUTOINCREMENT,
-    prefixe TEXT NOT NULL UNIQUE
+    prefixe TEXT NOT NULL UNIQUE,
+    id_operateur INT NOT NULL,
+    FOREIGN KEY (id_operateur) REFERENCES operateurs(id)
 );
 
 -- 2. Types d'opérations
@@ -35,14 +37,23 @@ CREATE TABLE operations (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     id_client           INTEGER NOT NULL,
     id_type_operation   INTEGER NOT NULL,
-    numero_destinataire TEXT    NULL,     -- Rempli uniquement en cas de transfert
+    numero_destinataire TEXT    NULL, 
     montant             REAL    NOT NULL,
     frais_applique      REAL    NOT NULL, -- Frais figé au moment de la transaction
     date_operation      DATETIME DEFAULT CURRENT_TIMESTAMP,
+    inclure_frais_retrait TINYINT(1) DEFAULT 0,
+    batch_envoi_multiple VARCHAR(50) DEFAULT NULL,
     FOREIGN KEY (id_client)         REFERENCES clients(id),
     FOREIGN KEY (id_type_operation) REFERENCES types_operation(id)
 );
 
+-- 6. Opérateurs / Administrateurs (login par mot de passe)
+CREATE TABLE administrateurs (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    nom_utilisateur   TEXT NOT NULL UNIQUE,
+    mot_de_passe_hash TEXT NOT NULL,
+    date_creation     DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 
 -- ============================================================
 --  VUE : Situation des gains (retraits + transferts uniquement)
@@ -63,7 +74,7 @@ GROUP BY t.nom;
 -- ============================================================
 
 
-INSERT INTO operateurs (nom_utilisateur, mot_de_passe_hash)
+INSERT INTO administrateurs (nom_utilisateur, mot_de_passe_hash)
 VALUES (
     'admin',
     '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
@@ -77,17 +88,3 @@ CREATE TABLE operateurs (
     commission_inter_pct DECIMAL(5, 2) DEFAULT 0.00 -- Le % de commission en plus pour les transferts sortants
 );
 
-ALTER TABLE prefixes ADD COLUMN id_operateur INT NOT NULL;
-ALTER TABLE prefixes ADD CONSTRAINT fk_prefixes_operateurs FOREIGN KEY (id_operateur) REFERENCES operateurs(id);
-
-ALTER TABLE operations 
-    -- 1. Permet de savoir vers quel opérateur l'argent est parti (pour la page compensation/clearing)
-    ADD COLUMN id_operateur_destination INT DEFAULT NULL, 
-    
-    -- 2. Flag (0 ou 1) pour savoir si le client a coché "Inclure les frais de retrait"
-    ADD COLUMN inclure_frais_retrait TINYINT(1) DEFAULT 0, 
-    
-    -- 3. Un identifiant unique (UUID ou Timestamp) pour regrouper les transactions issues d'un envoi multiple divisé
-    ADD COLUMN batch_envoi_multiple VARCHAR(50) DEFAULT NULL;
-
-ALTER TABLE operations ADD CONSTRAINT fk_operations_operateur_dest FOREIGN KEY (id_operateur_destination) REFERENCES operateurs(id);
