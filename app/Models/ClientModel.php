@@ -18,7 +18,9 @@ class ClientModel extends Model
         return $this->where('numero_telephone', trim($telephone))->first();
     }
 
-   
+    /**
+     * Inscription automatique (Insertion) d'un nouveau client
+     */
     public function ajouter(string $telephone): int
     {
         $id = $this->insert([

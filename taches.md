@@ -35,12 +35,15 @@ GROUP BY t.nom;
     - **Base** : Tables `Client` et `Operation` (Calcul dynamique et algébrique du solde de chaque client via la somme des dépôts moins la somme des retraits et transferts)
     - **Integration** : Tableau responsive Bootstrap listant tous les clients enregistred avec barre de recherche, tri et mise en avant des soldes positifs ou nuls
 
-### 2.2 . Coté Client
+### 2.2 . Coté Client [Ok:Herimino]
 - Login automatique avec le numéro de téléphone (pas d’inscription au préalable)
-    - **Page** : `app/Views/client/login.php` (Page d'authentification unique)
-    - **Fonction** : `AuthController::login()`
-    - **Base** : Contrôle du préfixe saisi via la table `Préfixe`. Si valide, recherche dans `Client`. Si le compte n'existe pas encore, exécution automatique de `ClientModel::insert()` avant d'ouvrir la session utilisateur
-    - **Integration** : Interface épurée et centrée (Mobile-first) avec un formulaire Bootstrap contenant un unique champ `<input type="tel">` et message d'erreur en cas de préfixe invalide
+    - [encours] [2minute] **Page** : `app/Views/client/login.php` (Page d'authentification unique) 
+
+    - [encours] [5minute] **Fonction** : `AuthController::login()`
+
+    - [encours] [7minute] **Base** : Contrôle du préfixe saisi via la table `Préfixe`. Si valide, recherche dans  `Client`. Si le compte n'existe pas encore, exécution automatique de `ClientModel::insert()` avant d'ouvrir la session utilisateur
+
+    - [encours] [10minute] **Integration** : Interface épurée et centrée (Mobile-first) avec un formulaire Bootstrap contenant un unique champ `<input type="tel">` et message d'erreur en cas de préfixe invalide
 
 - Opérations
     - voir le solde

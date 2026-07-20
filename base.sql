@@ -49,4 +49,13 @@ SELECT
 FROM operations o
 JOIN types_operation t ON o.id_type_operation = t.id
 WHERE t.nom IN ('retrait', 'transfert')
+<<<<<<< HEAD
 GROUP BY t.nom;
+=======
+GROUP BY t.nom;-- 1. Table des préfixes autorisés par l'opérateur (ex: 033, 037)
+CREATE TABLE prefixes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    prefixe TEXT NOT NULL UNIQUE
+);
+
+>>>>>>> dev

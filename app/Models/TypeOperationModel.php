@@ -17,14 +17,18 @@ class TypeOperationModel extends Model
     /**
      * Retourner tous les types d'opérations
      */
-    public function getAll()
+    public function getAll(): array
     {
         return $this->orderBy('nom', 'ASC')->findAll();
     }
 
+    /**
+     * Retourner un type par son id
+     */
     public function getById($id)
     {
-        return $this->find($id);
+        // Cast explicite en entier pour sécuriser la clé primaire
+        return $this->find((int) $id);
     }
 
     /**
@@ -32,8 +36,9 @@ class TypeOperationModel extends Model
      */
     public function ajouter($nom)
     {
+        // Cast explicite en chaîne de caractères
         return $this->insert([
-            'nom' => $nom
+            'nom' => trim((string) $nom)
         ]);
     }
 
@@ -42,9 +47,8 @@ class TypeOperationModel extends Model
      */
     public function modifier($id, $nom)
     {
-        return $this->update($id, [
-            'nom' => $nom
-        ]);
+        // Sécurisation des deux variables ($id en int, $nom en string)
+        return $this->update((int) $id, ['nom' => trim((string) $nom)]);
     }
 
     /**
@@ -52,7 +56,8 @@ class TypeOperationModel extends Model
      */
     public function supprimer($id)
     {
-        return $this->delete($id);
+        // Cast explicite en entier avant suppression
+        return $this->delete((int) $id);
     }
 
     /**
@@ -60,6 +65,7 @@ class TypeOperationModel extends Model
      */
     public function getByNom($nom)
     {
-        return $this->where('nom', $nom)->first();
+        // Cast en string pour la clause WHERE
+        return $this->where('nom', (string) $nom)->first();
     }
 }
