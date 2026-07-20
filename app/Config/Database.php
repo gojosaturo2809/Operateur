@@ -18,7 +18,7 @@ class Database extends Config
         'hostname'    => 'localhost',
         'username'    => '',
         'password'    => '',
-        'database'    => WRITEPATH . 'db' . DIRECTORY_SEPARATOR . 'blog.db',
+        'database'    => WRITEPATH . 'db' . DIRECTORY_SEPARATOR . 'operateur.db',
         'DBDriver'    => 'SQLite3',
         'DBPrefix'    => '',
         'pConnect'    => false,
