@@ -7,7 +7,7 @@
         <tbody>
         <?php foreach (($clients ?? []) as $c): ?>
             <tr>
-                <td><?= $c['id'] ?></td>
+                <td><?= $c['client_id'] ?></td>
                 <td><?= esc($c['numero_telephone']) ?></td>
                 <td><?= number_format($c['solde'] ?? 0,0,',',' ') ?> Ar</td>
             </tr>

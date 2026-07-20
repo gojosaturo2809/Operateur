@@ -201,3 +201,27 @@ t.nom='transfert'
 AND op.est_principal=0
 
 GROUP BY op.id;
+
+CREATE VIEW vue_client_solde AS
+WITH solde_client AS (
+    SELECT
+        c.id AS client_id,
+        c.numero_telephone,
+        COALESCE(SUM(CASE WHEN t.nom = 'depot' THEN o.montant ELSE 0 END), 0) AS total_depots,
+        COALESCE(SUM(CASE WHEN t.nom = 'retrait' THEN o.montant ELSE 0 END), 0) AS total_retraits,
+        COALESCE(SUM(CASE WHEN t.nom = 'transfert' THEN o.montant ELSE 0 END), 0) AS total_transferts
+    FROM clients c
+    LEFT JOIN operations o
+        ON c.id = o.id_client
+    LEFT JOIN types_operation t
+        ON o.id_type_operation = t.id
+    GROUP BY c.id, c.numero_telephone
+)
+SELECT
+    client_id,
+    numero_telephone,
+    total_depots,
+    total_retraits,
+    total_transferts,
+    (total_depots - total_retraits - total_transferts) AS solde
+FROM solde_client;
