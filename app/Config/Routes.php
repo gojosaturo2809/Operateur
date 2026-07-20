@@ -44,8 +44,8 @@ $routes->group('client', function (RouteCollection $routes) {
 $routes->group('operateur', function (RouteCollection $routes) {
     
     // Situation des gains (Dashboard principal opérateur)
-    $routes->get('/',           'OperateurController::index');
-    $routes->get('dashboard',   'OperateurController::index');
+    $routes->get('/',           'DashboardAdminController::index');
+    $routes->get('dashboard',   'DashboardAdminController::index');
     $routes->get('gains',       'OperateurController::index');
 
     // Liste des comptes clients
