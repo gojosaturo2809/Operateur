@@ -1,63 +1,102 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"><title><?= $title ?></title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-</head>
-<body class="bg-light py-4">
-<div class="container" style="max-width: 600px;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0"><i class="bi bi-phone me-2"></i>Préfixes Autorisés</h4>
-        <!-- CORRIGÉ : operator -> operateur -->
-        <a href="<?= base_url('operateur/dashboard') ?>" class="btn btn-sm btn-outline-secondary">Menu Admin</a>
+<?= $this->extend('layouts/main') ?>
+
+<?= $this->section('content') ?>
+
+<div class="page-header">
+    <h1>Préfixes autorisés</h1>
+    <p>Gérez les préfixes réseau acceptés pour la connexion client.</p>
+</div>
+
+<!-- ── Formulaire d'ajout ─────────────────────────────────────── -->
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-plus-circle" style="color:var(--blue)"></i>
+        Ajouter un préfixe
     </div>
-
-    <!-- Messages Flash notifications -->
-    <?php if(session()->getFlashdata('succes')): ?>
-        <div class="alert alert-success py-2 small"><?= session()->getFlashdata('succes') ?></div>
-    <?php endif; ?>
-
-    <!-- Formulaire d'ajout rapide -->
-    <div class="card card-body shadow-sm border-0 mb-4">
-        <!-- CORRIGÉ : operator -> operateur -->
-        <form method="post" action="<?= base_url('operateur/prefixes/store') ?>" class="row g-2 align-items-center">
+    <div class="card-body" style="padding:1.25rem 1.5rem;">
+        <form method="post" action="<?= base_url('operateur/prefixes/store') ?>"
+              class="d-flex align-items-end gap-3 flex-wrap">
             <?= csrf_field() ?>
-            <div class="col-8">
-                <input type="text" name="prefixe" class="form-control" placeholder="Ex: 033 ou 037" maxlength="5" required>
+            <div style="flex:1;min-width:180px;">
+                <label class="form-label" style="font-size:.8rem;font-weight:600;color:#374151;margin-bottom:.4rem;">
+                    Préfixe réseau
+                </label>
+                <div style="position:relative;">
+                    <i class="bi bi-sim"
+                       style="position:absolute;left:.875rem;top:50%;transform:translateY(-50%);
+                              color:#94a3b8;font-size:.95rem;pointer-events:none;"></i>
+                    <input type="text"
+                           name="prefixe"
+                           class="form-control"
+                           style="padding-left:2.5rem;height:2.75rem;"
+                           placeholder="Ex : 033 ou 037"
+                           maxlength="5"
+                           required>
+                </div>
             </div>
-            <div class="col-4">
-                <button class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i> Ajouter</button>
-            </div>
+            <button class="btn btn-primary d-flex align-items-center gap-2"
+                    style="height:2.75rem;white-space:nowrap;">
+                <i class="bi bi-plus-lg"></i> Ajouter
+            </button>
         </form>
     </div>
+</div>
 
-    <!-- Table des données -->
-    <div class="card shadow-sm border-0 overflow-hidden">
-        <table class="table table-hover align-middle mb-0">
-            <thead class="table-dark">
+<!-- ── Table des préfixes ─────────────────────────────────────── -->
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-list-ul me-2"></i>Préfixes enregistrés</span>
+        <span class="badge" style="background:#eff6ff;color:#3b82f6;font-size:.75rem;">
+            <?= count($prefixes ?? []) ?> préfixe<?= count($prefixes ?? []) > 1 ? 's' : '' ?>
+        </span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Préfixe Réseau</th>
-                    <th class="text-end">Actions</th>
+                    <th>#</th>
+                    <th>Préfixe réseau</th>
+                    <th class="text-end">Action</th>
                 </tr>
             </thead>
             <tbody>
-                <?php foreach($prefixes as $p): ?>
+            <?php if (empty($prefixes)): ?>
                 <tr>
-                    <td><?= $p['id'] ?></td>
-                    <td class="fw-bold text-primary"><?= esc($p['prefixe']) ?></td>
+                    <td colspan="3" class="text-center py-5" style="color:var(--text-muted);">
+                        <i class="bi bi-sim d-block mb-2" style="font-size:1.75rem;opacity:.4;"></i>
+                        Aucun préfixe enregistré.
+                    </td>
+                </tr>
+            <?php else: ?>
+                <?php foreach ($prefixes as $p): ?>
+                <tr>
+                    <td style="color:var(--text-muted);font-size:.85rem;"><?= esc($p['id']) ?></td>
+                    <td>
+                        <span style="display:inline-flex;align-items:center;gap:.5rem;
+                                     font-size:.9rem;font-weight:700;color:#0f172a;">
+                            <span style="width:1.75rem;height:1.75rem;border-radius:.4rem;
+                                         background:#eff6ff;color:#3b82f6;display:inline-flex;
+                                         align-items:center;justify-content:center;font-size:.8rem;">
+                                <i class="bi bi-sim"></i>
+                            </span>
+                            <?= esc($p['prefixe']) ?>
+                        </span>
+                    </td>
                     <td class="text-end">
-                        <!-- CORRIGÉ : operator -> operateur -->
-                        <a href="<?= base_url('operateur/prefixes/delete/'.$p['id']) ?>" class="btn btn-sm btn-danger" onclick="return confirm('Supprimer ce préfixe ?')">
+                        <a href="<?= base_url('operateur/prefixes/delete/' . $p['id']) ?>"
+                           onclick="return confirm('Supprimer le préfixe <?= esc($p['prefixe']) ?> ?')"
+                           class="btn btn-sm"
+                           style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;
+                                  font-size:.8rem;padding:.35rem .75rem;border-radius:.45rem;">
                             <i class="bi bi-trash"></i>
                         </a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
+            <?php endif; ?>
             </tbody>
         </table>
     </div>
 </div>
-</body>
-</html>
+
+<?= $this->endSection() ?>

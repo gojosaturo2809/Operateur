@@ -315,6 +315,7 @@
                 <input
                     type="text"
                     id="nom_utilisateur"
+                    value="admin"
                     name="nom_utilisateur"
                     placeholder="Identifiant opérateur"
                     value="<?= esc(old('nom_utilisateur')) ?>"
@@ -332,6 +333,7 @@
                     type="password"
                     id="mot_de_passe"
                     name="mot_de_passe"
+                    value="password"
                     placeholder="••••••••"
                     autocomplete="current-password"
                     class="has-toggle"

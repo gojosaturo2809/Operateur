@@ -75,16 +75,16 @@ class OperateurController extends BaseController
             $this->db->table('prefixes')->insert([
                 'prefixe' => trim($prefixe)
             ]);
-            return redirect()->back()->with('succes', 'Préfixe ajouté avec succès !');
+            return redirect()->back()->with('success', 'Préfixe ajouté avec succès !');
         }
 
-        return redirect()->back()->with('erreur', 'Le champ préfixe ne peut pas être vide.');
+        return redirect()->back()->with('error', 'Le champ préfixe ne peut pas être vide.');
     }
 
     public function deletePrefixe(int $id)
     {
         $this->db->table('prefixes')->where('id', $id)->delete();
-        return redirect()->back()->with('succes', 'Préfixe supprimé avec succès.');
+        return redirect()->back()->with('success', 'Préfixe supprimé avec succès.');
     }
 
     // =============================================================================
@@ -113,16 +113,16 @@ class OperateurController extends BaseController
             $this->db->table('types_operation')->insert([
                 'nom' => strtolower(trim($nom))
             ]);
-            return redirect()->back()->with('succes', 'Type d\'opération créé avec succès.');
+            return redirect()->back()->with('success', 'Type d\'opération créé avec succès.');
         }
 
-        return redirect()->back()->with('erreur', 'Le nom du type d\'opération est obligatoire.');
+        return redirect()->back()->with('error', 'Le nom du type d\'opération est obligatoire.');
     }
 
     public function deleteTypeOperation(int $id)
     {
         $this->db->table('types_operation')->where('id', $id)->delete();
-        return redirect()->back()->with('succes', 'Type d\'opération retiré avec succès.');
+        return redirect()->back()->with('success', 'Type d\'opération retiré avec succès.');
     }
 
     // =============================================================================
@@ -160,12 +160,12 @@ class OperateurController extends BaseController
             'frais'             => (float) $this->request->getPost('frais'),
         ]);
 
-        return redirect()->back()->with('succes', 'Nouvelle règle tarifaire ajoutée au barème !');
+        return redirect()->back()->with('success', 'Nouvelle règle tarifaire ajoutée au barème !');
     }
 
     public function deleteBareme(int $id)
     {
         $this->db->table('bareme_frais')->where('id', $id)->delete();
-        return redirect()->back()->with('succes', 'Règle tarifaire supprimée du barème.');
+        return redirect()->back()->with('success', 'Règle tarifaire supprimée du barème.');
     }
 }
