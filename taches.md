@@ -48,24 +48,27 @@ GROUP BY t.nom;
 - Opérations
     - voir le solde
         - [ok] [10minute] **Page** : `app/Views/client/dashboard.php` (Accueil de l'espace client)
+
         - **Fonction** : `ClientController::index()` invoquant `OperationModel::calculateSolde($id_client)`
+
         - [ok] [10minute] **Base** : Table `Operation` (Somme filtrée sur les opérations du client connecté)
-        - **Integration** : Bannière ou badge volumineux mis en relief en haut de page affichant le solde disponible formaté en Ariary (ex: `15 000 Ar`)
-    - Dépôt 
-        - **Page** : `app/Views/client/depot.php` (ou onglet/modal dédié)
-        - **Fonction** : `ClientController::storeDepot()`
-        - **Base** : Table `Operation` (Insertion d'une ligne avec `id_type_operation` lié au dépôt et `frais_appliqué` = 0)
-        - **Integration** : Formulaire à champ unique (Montant) avec alerte Bootstrap de succès dès confirmation (considéré comme automatique)
+
+        - [ok] [7minute] **Integration** : Bannière ou badge volumineux mis en relief en haut de page affichant le solde disponible formaté en Ariary
+    - Dépôt [ok] [10minute]
+        - [ok] **Page** : `app/Views/client/depot.php` (ou onglet/modal dédié)
+        - [ok] **Fonction** : `ClientController::storeDepot()`
+        - [ok] **Base** : Table `Operation` (Insertion d'une ligne avec `id_type_operation` lié au dépôt et `frais_appliqué` = 0)
+        - [ok] **Integration** : Formulaire à champ unique (Montant) avec alerte Bootstrap de succès dès confirmation (considéré comme automatique)
     - Retrait
-        - **Page** : `app/Views/client/retrait.php`
-        - **Fonction** : `ClientController::storeRetrait()`
-        - **Base** : Tables `Operation` et `bareme_frais` (Vérification et extraction du frais lié à la tranche du montant, et validation stricte de la provision )
-        - **Integration** : Formulaire de saisie dynamique avec un script JavaScript (JS) modifiant en temps réel l'affichage des frais et du coût total débité avant soumission
+        - [ok] **Page** : `app/Views/client/retrait.php`
+        - [ok] **Fonction** : `ClientController::storeRetrait()`
+        - [ok] **Base** : Tables `Operation` et `bareme_frais` (Vérification et extraction du frais lié à la tranche du montant, et validation stricte de la provision )
+        - [ok] **Integration** : Formulaire de saisie dynamique avec un script JavaScript (JS) modifiant en temps réel l'affichage des frais et du coût total débité avant soumission
     - Transfert
-        - **Page** : `app/Views/client/transfert.php`
-        - **Fonction** : `ClientController::storeTransfert()`
-        - **Base** : Tables `Operation`, `bareme_frais` et `Préfixe` (Contrôle du préfixe du destinataire, récupération du frais applicable selon le barème de transfert, et validation de la provision suffisante du compte émetteur)
-        - **Integration** : Formulaire Bootstrap à double entrée (Numéro de téléphone du destinataire et Montant à envoyer) avec récapitulatif détaillé avant validation
+        - [ok] **Page** : `app/Views/client/transfert.php`
+        - [ok] **Fonction** : `ClientController::storeTransfert()`
+        - [ok] **Base** : Tables `Operation`, `bareme_frais` et `Préfixe` (Contrôle du préfixe du destinataire, récupération du frais applicable selon le barème de transfert, et validation de la provision suffisante du compte émetteur)
+        - [ok] **Integration** : Formulaire Bootstrap à double entrée (Numéro de téléphone du destinataire et Montant à envoyer) avec récapitulatif détaillé avant validation
     - Historique des opérations
         - **Page** : `app/Views/client/historique.php` (ou table incluse dans le dashboard)
         - **Fonction** : `ClientController::historique()` exploitant `OperationModel::getHistory($id_client)`
