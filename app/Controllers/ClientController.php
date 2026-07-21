@@ -179,7 +179,7 @@ class ClientController extends BaseController
         // Le transfert est autorisé vers tout opérateur enregistré via ses préfixes.
         $db = db_connect();
         $reseauDestination = $db->table('prefixes p')
-            ->select('op.est_principal, op.commission_inter_pct')
+            ->select('op.est_principal,op.pourcentage,op.commission_inter_pct')
             ->join('operateurs op', 'op.id = p.id_operateur')
             ->where('p.prefixe', substr($destinataire, 0, 3))
             ->get()->getRowArray();
@@ -196,11 +196,15 @@ class ClientController extends BaseController
         if ((int) $reseauDestination['est_principal'] !== 1) {
             $commission = round($montant * (float) $reseauDestination['commission_inter_pct'] / 100, 2);
         }
+        $pourcentage = 0.0;
+                if ((int) $reseauDestination['est_principal'] !== 1) {
+            $pourcentage = round($montant * (float) $reseauDestination['pourcentage'] / 100, 2);
+        }
 
         $inclure = $this->request->getPost('inclure_frais_retrait') === '1';
         $fraisRetrait = $inclure ? $this->operationModel->getFraisApplicable(2, $montant) : 0;
         if ($fraisRetrait === null) return redirect()->back()->with('erreur', 'Montant hors barème de retrait.');
-        $fraisTotal = $frais + $commission + $fraisRetrait;
+        $fraisTotal = $frais + $commission + $fraisRetrait + $pourcentage;
         $soldeActuel = $this->operationModel->calculateSolde($id_client, $telephone);
         if ($soldeActuel < ($montant + $fraisTotal)) {
             return redirect()->back()->with('erreur', 'Provision insuffisante pour finaliser le transfert.');

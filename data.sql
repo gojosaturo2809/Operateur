@@ -17,3 +17,5 @@ INSERT INTO bareme_frais (id_type_operation, montant_min, montant_max, frais) VA
 ((SELECT id FROM types_operation WHERE nom = 'retrait'), 250001, 500000, 1500),
 ((SELECT id FROM types_operation WHERE nom = 'retrait'), 500001, 1000000, 2500),
 ((SELECT id FROM types_operation WHERE nom = 'retrait'), 1000001, 2000000, 3000);
+
+

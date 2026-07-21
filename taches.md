@@ -144,4 +144,16 @@ GROUP BY t.nom;
 
 # debugage
 - Bareme transfert multiple : [ok] [15minute] **Page** : `app/Views/client/envoi_multiple.php` (Mise à jour) [Mise à jour bareme]
-- 
+
+
+# Promotion %pourcetange frais de transfert makany meme opérateur :
+% tage avy any anaty base .
+
+- Page afaka mimodifier anle izy
+
+# Alea 1 :
+**Promotion %tage frais de transfert**
+- Base : Add colone %tage promo dans la table operateur 
+- Mise à Jour OperateurModel  (pour ajouter pourcentage)
+- Fonction :ClientController::StoreOperateur() ajoute 
+- Integration :
