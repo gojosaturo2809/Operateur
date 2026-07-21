@@ -2,17 +2,24 @@
 
 namespace App\Controllers;
 
+use App\Models\ClientModel;
+use App\Models\ClientEpargneModel;
+use App\Models\EpargneModel;
 use App\Models\OperationModel;
 
 class ClientController extends BaseController
 {
     protected $operationModel;
+    protected $clientModel;
+    protected $clientEpargneModel;
     protected $session;
 
     public function __valueSession()
     {
         $this->session = session();
         $this->operationModel = new OperationModel();
+        $this->clientModel=new ClientModel();
+        $this->clientEpargneModel=new ClientEpargneModel();
     }
 
     // Protection globale constructeur équivalent CI4
@@ -21,6 +28,8 @@ class ClientController extends BaseController
         parent::initController($request, $response, $logger);
         $this->session = session();
         $this->operationModel = new OperationModel();
+        $this->clientModel = new ClientModel();
+        $this->clientEpargneModel = new ClientEpargneModel();
     }
 
     private function checkAuth()
@@ -113,6 +122,48 @@ class ClientController extends BaseController
         return redirect()->to('/client/dashboard')->with('succes', 'Retrait validé avec succès !');
     }
 
+     public function pct_epargne()
+    {
+        if (!$this->checkAuth()) return redirect()->to('/login');
+        
+        // Charger le barème pour le script JS de calcul en temps réel
+        
+        return view('client/pct_epargne', [
+            'title'   => 'inserer epargne',
+            
+        ]);
+    }
+
+    public function storePct_epargne()
+    {
+        if (!$this->checkAuth()) return redirect()->to('/login');
+
+        $id_client = $this->session->get('client_id');
+        $pct = (float) $this->request->getPost('pct_epargne');
+
+        if ($pct < 0 || $pct > 100) {
+            return redirect()->back()->withInput()->with('erreur', 'Le pourcentage d’épargne doit être compris entre 0 et 100.');
+        }
+
+        $existing = $this->clientEpargneModel->where('id_client', $id_client)->first();
+        $data = [
+            'id_client'   => $id_client,
+            'epargne_pct' => $pct,
+        ];
+
+        if ($existing) {
+            $this->clientEpargneModel->update($existing['id'], $data);
+        } else {
+            $this->clientEpargneModel->insert($data);
+        }
+
+        return redirect()->to('/client/dashboard')->with('succes', 'Épargne validée avec succès !');
+    }
+
+
+
+
+
     public function transfert()
     {
         if (!$this->checkAuth()) return redirect()->to('/login');
@@ -167,6 +218,7 @@ class ClientController extends BaseController
         $id_client    = $this->session->get('client_id');
         $telephone    = $this->session->get('telephone');
         $destinataire = preg_replace('/\D+/', '', (string)$this->request->getPost('numero_destinataire'));
+        $clt = $this->clientModel->getByTelephone($destinataire);
         $montant      = (float)$this->request->getPost('montant');
 
         if ($montant <= 0 || strlen($destinataire) !== 10) {
@@ -174,6 +226,10 @@ class ClientController extends BaseController
         }
         if ($destinataire === $telephone) {
             return redirect()->back()->with('erreur', 'Opération invalide : impossible de s\'envoyer un transfert.');
+        }
+
+        if (!$clt) {
+            return redirect()->back()->with('erreur', 'Client destinataire introuvable.');
         }
 
         // Le transfert est autorisé vers tout opérateur enregistré via ses préfixes.
@@ -193,13 +249,23 @@ class ClientController extends BaseController
         }
 
         $commission = 0.0;
+        $epargne=0.0;
         if ((int) $reseauDestination['est_principal'] !== 1) {
             $commission = round($montant * (float) $reseauDestination['commission_inter_pct'] / 100, 2);
         }
+<<<<<<< HEAD
+        
+
+        $pctEpargneRow = $this->clientEpargneModel->where('id_client', (int) $clt['id'])->first();
+        $pctEpargne = (float) ($pctEpargneRow['epargne_pct'] ?? 0);
+        $montantEpargne = round($montant * $pctEpargne / 100, 2);
+        
+=======
         $pourcentage = 0.0;
                 if ((int) $reseauDestination['est_principal'] !== 1) {
             $pourcentage = round($montant * (float) $reseauDestination['pourcentage'] / 100, 2);
         }
+>>>>>>> main
 
         $inclure = $this->request->getPost('inclure_frais_retrait') === '1';
         $fraisRetrait = $inclure ? $this->operationModel->getFraisApplicable(2, $montant) : 0;
@@ -210,14 +276,29 @@ class ClientController extends BaseController
             return redirect()->back()->with('erreur', 'Provision insuffisante pour finaliser le transfert.');
         }
 
-        $this->operationModel->save([
-            'id_client'          => $id_client,
-            'id_type_operation'  => 3,
-            'numero_destinataire'=> $destinataire,
-            'montant'            => $montant,
-            'frais_applique'     => $fraisTotal,
+        $db->transStart();
+
+        $this->operationModel->insert([
+            'id_client'             => $id_client,
+            'id_type_operation'     => 3,
+            'numero_destinataire'   => $destinataire,
+            'montant'               => $montant,
+            'frais_applique'        => $fraisTotal,
             'inclure_frais_retrait' => $inclure ? 1 : 0,
         ]);
+
+        if ($montantEpargne > 0) {
+            (new EpargneModel())->insert([
+                'id_client'   => (int) $clt['id'],
+                'val_epargne' => $montantEpargne,
+            ]);
+        }
+
+        $db->transComplete();
+
+        if (! $db->transStatus()) {
+            return redirect()->back()->with('erreur', 'Erreur lors de l’enregistrement du transfert.');
+        }
 
         return redirect()->to('/client/dashboard')->with('success', 'Transfert envoyé avec succès !');
     }

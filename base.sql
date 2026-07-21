@@ -206,14 +206,14 @@ AND op.est_principal=0
 
 GROUP BY op.id;
 
-CREATE VIEW vue_client_solde AS
+CREATE  VIEW vue_client_solde AS
 WITH solde_client AS (
     SELECT
         c.id AS client_id,
         c.numero_telephone,
         COALESCE(SUM(CASE WHEN t.nom = 'depot' THEN o.montant ELSE 0 END), 0) AS total_depots,
-        COALESCE(SUM(CASE WHEN t.nom = 'retrait' THEN o.montant ELSE 0 END), 0) AS total_retraits,
-        COALESCE(SUM(CASE WHEN t.nom = 'transfert' THEN o.montant ELSE 0 END), 0) AS total_transferts
+        COALESCE(SUM(CASE WHEN t.nom = 'retrait' THEN o.montant+o.frais_applique ELSE 0 END), 0) AS total_retraits,
+        COALESCE(SUM(CASE WHEN t.nom = 'transfert' THEN o.montant+o.frais_applique ELSE 0 END), 0) AS total_transferts
     FROM clients c
     LEFT JOIN operations o
         ON c.id = o.id_client
@@ -229,3 +229,18 @@ SELECT
     total_transferts,
     (total_depots - total_retraits - total_transferts) AS solde
 FROM solde_client;
+
+
+CREATE table pct_epargne(
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_client           INTEGER  NOT NULL,
+      epargne_pct REAL    NOT NULL DEFAULT 0.00 ,
+      FOREIGN KEY (id_client)         REFERENCES clients(id)
+);
+CREATE table epargne(
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_client           INTEGER  NOT NULL,
+      val_epargne REAL    NOT NULL DEFAULT 0.00 ,
+       date_epargne      DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (id_client)         REFERENCES clients(id)
+);

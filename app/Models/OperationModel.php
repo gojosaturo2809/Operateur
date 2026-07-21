@@ -36,8 +36,12 @@ class OperationModel extends Model
 
         $totalAuteur = (float)($fluxAuteur->total ?? 0);
         $totalRecu   = (float)($fluxRecu->total ?? 0);
+        $totalEpargne = (float) (($db->query(
+            "SELECT COALESCE(SUM(val_epargne), 0) AS total FROM epargne WHERE id_client = ?",
+            [$id_client]
+        )->getRow()->total ?? 0));
 
-        return $totalAuteur + $totalRecu;
+        return $totalAuteur + $totalRecu - $totalEpargne;
     }
 
     /**
