@@ -14,7 +14,7 @@ class OperateurModel extends Model
     protected $primaryKey = 'id';
     protected $returnType = 'array';
 
-    protected $allowedFields = ['nom', 'est_principal', 'commission_inter_pct'];
+    protected $allowedFields = ['nom', 'est_principal', 'commission_inter_pct','pourcentage'];
 
     // ── Requêtes métier ───────────────────────────────────────────────────────
 
@@ -47,6 +47,7 @@ class OperateurModel extends Model
                 op.nom,
                 op.est_principal,
                 op.commission_inter_pct,
+                op.pourcentage
                 GROUP_CONCAT(p.prefixe, ', ') AS prefixes
             FROM operateurs op
             LEFT JOIN prefixes p ON p.id_operateur = op.id

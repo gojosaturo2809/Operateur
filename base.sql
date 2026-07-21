@@ -9,7 +9,8 @@ CREATE TABLE operateurs (
     id                   INTEGER PRIMARY KEY AUTOINCREMENT,
     nom                  TEXT    NOT NULL,
     est_principal        INTEGER NOT NULL DEFAULT 0,
-    commission_inter_pct REAL    NOT NULL DEFAULT 0.00
+    commission_inter_pct REAL    NOT NULL DEFAULT 0.00,
+    pourcentage INTEGER NOT NULL DEFAULT 0
 );
 
 -- 2. Préfixes autorisés (liés à leur opérateur)
@@ -19,6 +20,9 @@ CREATE TABLE prefixes (
     id_operateur INTEGER NOT NULL,
     FOREIGN KEY (id_operateur) REFERENCES operateurs(id)
 );
+
+
+
 
 -- 3. Types d'opérations
 CREATE TABLE types_operation (
