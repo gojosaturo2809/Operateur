@@ -8,7 +8,7 @@ class ClientEpargneModel extends Model
 {
     protected $table = 'pct_epargne';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['id_client',' epargne_pct'];
+    protected $allowedFields = ['id_client', 'epargne_pct'];
 
 
 }

@@ -27,7 +27,7 @@
             </div>
         <?php endif; ?>
 
-        <form method="post" action="<?= base_url('client/storePct_epargne') ?>">
+        <form method="post" action="<?= base_url('client/store-pct_epargne') ?>">
             <?= csrf_field() ?>
 
             <label class="client-field-label" for="pct_epargne">Pourcentage epargne</label>
