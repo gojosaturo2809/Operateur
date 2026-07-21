@@ -2,17 +2,21 @@
 
 namespace App\Controllers;
 
+use App\Models\ClientModel;
 use App\Models\OperationModel;
+use App\Models\ClientEpargneModel;
 
 class ClientController extends BaseController
 {
     protected $operationModel;
+    protected $clientModel;
     protected $session;
 
     public function __valueSession()
     {
         $this->session = session();
         $this->operationModel = new OperationModel();
+        $this->clientModel=new ClientEpargneModel();
     }
 
     // Protection globale constructeur équivalent CI4
@@ -113,6 +117,39 @@ class ClientController extends BaseController
         return redirect()->to('/client/dashboard')->with('succes', 'Retrait validé avec succès !');
     }
 
+     public function pct_epargne()
+    {
+        if (!$this->checkAuth()) return redirect()->to('/login');
+        
+        // Charger le barème pour le script JS de calcul en temps réel
+        
+        return view('client/pct_epargne', [
+            'title'   => 'inserer epargne',
+            
+        ]);
+    }
+
+    public function storePct_epargne()
+    {
+        if (!$this->checkAuth()) return redirect()->to('/login');
+
+        $id_client = $this->session->get('client_id');
+       
+        $pct   = (float)$this->request->getPost('pct_epargne');
+
+
+        $this->clientModel->save([
+            'id_client'          => $id_client,
+            'epargne_pct'=>$pct
+        ]);
+
+        return redirect()->to('/client/dashboard')->with('succes', 'Epargne validé avec succès !');
+    }
+
+
+
+
+
     public function transfert()
     {
         if (!$this->checkAuth()) return redirect()->to('/login');
@@ -179,8 +216,9 @@ class ClientController extends BaseController
         // Le transfert est autorisé vers tout opérateur enregistré via ses préfixes.
         $db = db_connect();
         $reseauDestination = $db->table('prefixes p')
-            ->select('op.est_principal, op.commission_inter_pct')
+            ->select('op.est_principal, op.commission_inter_pct','p.epargne_pct')
             ->join('operateurs op', 'op.id = p.id_operateur')
+            ->join('pct_epargne pe','')
             ->where('p.prefixe', substr($destinataire, 0, 3))
             ->get()->getRowArray();
         if ($reseauDestination === null) {
@@ -193,9 +231,14 @@ class ClientController extends BaseController
         }
 
         $commission = 0.0;
+        $epargne=0.0;
         if ((int) $reseauDestination['est_principal'] !== 1) {
             $commission = round($montant * (float) $reseauDestination['commission_inter_pct'] / 100, 2);
         }
+        if ((int) $reseauDestination['est_principal'] === 1) {
+            $epargne = round($montant * (float) $reseauDestination['commission_inter_pct'] / 100, 2);
+        }
+        
 
         $inclure = $this->request->getPost('inclure_frais_retrait') === '1';
         $fraisRetrait = $inclure ? $this->operationModel->getFraisApplicable(2, $montant) : 0;

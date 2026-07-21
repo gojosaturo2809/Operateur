@@ -33,6 +33,8 @@ $routes->group('client', function (RouteCollection $routes) {
     $routes->post('store-depot',     'ClientController::storeDepot');
     $routes->get( 'retrait',         'ClientController::retrait');
     $routes->post('store-retrait',   'ClientController::storeRetrait');
+     $routes->get( 'pct_epargne',         'ClientController::pct_epargne');
+    $routes->post('store-pct_epargne',   'ClientController::storePct_epargne');
     $routes->get( 'transfert',       'ClientController::transfert');
     $routes->post('store-transfert', 'ClientController::storeTransfert');
     $routes->get( 'envoi-multiple', 'ClientController::envoiMultiple');

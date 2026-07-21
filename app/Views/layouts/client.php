@@ -72,6 +72,12 @@
         <i class="bi bi-plus-circle<?= uri_string() === 'client/depot' ? '-fill' : '' ?>"></i>
         <span>Dépôt</span>
     </a>
+    
+      <a href="<?= base_url('client/pct_epargne') ?>"
+       class="client-nav-item <?= uri_string() === 'client/depot' ? 'active' : '' ?>">
+        <i class="bi bi-plus-circle<?= uri_string() === 'client/depot' ? '-fill' : '' ?>"></i>
+        <span>Pct Epargne</span>
+    </a>
 
     <a href="<?= base_url('client/retrait') ?>"
        class="client-nav-item <?= uri_string() === 'client/retrait' ? 'active' : '' ?>">

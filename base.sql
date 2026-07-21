@@ -225,3 +225,18 @@ SELECT
     total_transferts,
     (total_depots - total_retraits - total_transferts) AS solde
 FROM solde_client;
+
+
+CREATE table pct_epargne(
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_client           INTEGER  NOT NULL,
+      epargne_pct REAL    NOT NULL DEFAULT 0.00 ,
+      FOREIGN KEY (id_client)         REFERENCES clients(id)
+);
+CREATE table epargne(
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      id_client           INTEGER  NOT NULL,
+      val_epargne REAL    NOT NULL DEFAULT 0.00 ,
+       date_epargne      DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (id_client)         REFERENCES clients(id)
+);
