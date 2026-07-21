@@ -141,3 +141,7 @@ GROUP BY t.nom;
     - [ ] [25minute] **Fonction** : `ClientController::storeEnvoiMultiple()`
     - [ ] [20minute] **Base** : Validation stricte (tous les numéros doivent appartenir à l'opérateur principal). Division du montant global par le nombre de numéros valides, vérification de la provision totale, puis boucle d'insertion d'opérations avec le même `batch_envoi_multiple`
     - [ ] [20minute] **Integration** : Champ `<textarea>` pour saisir les numéros séparés par des virgules ou retours à la ligne. Indicateur dynamique indiquant "Montant par personne : X Ar"
+
+# debugage
+- Bareme transfert multiple : [ok] [15minute] **Page** : `app/Views/client/envoi_multiple.php` (Mise à jour) [Mise à jour bareme]
+- 
