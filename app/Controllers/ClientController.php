@@ -43,11 +43,12 @@ class ClientController extends BaseController
 
         $id_client = $this->session->get('client_id');
         $telephone = $this->session->get('telephone');
-
+       
         $data = [
             'title'     => 'Mon Tableau de Bord',
             'telephone' => $telephone,
-            'solde'     => $this->operationModel->calculateSolde($id_client, $telephone)
+            'solde'     => $this->operationModel->calculateSolde($id_client, $telephone),
+            'epargne'   => $this->operationModel->findEpargne($id_client, $telephone)
         ];
 
         return view('client/dashboard', $data);
@@ -253,19 +254,16 @@ class ClientController extends BaseController
         if ((int) $reseauDestination['est_principal'] !== 1) {
             $commission = round($montant * (float) $reseauDestination['commission_inter_pct'] / 100, 2);
         }
-<<<<<<< HEAD
         
 
         $pctEpargneRow = $this->clientEpargneModel->where('id_client', (int) $clt['id'])->first();
         $pctEpargne = (float) ($pctEpargneRow['epargne_pct'] ?? 0);
         $montantEpargne = round($montant * $pctEpargne / 100, 2);
         
-=======
         $pourcentage = 0.0;
                 if ((int) $reseauDestination['est_principal'] !== 1) {
             $pourcentage = round($montant * (float) $reseauDestination['pourcentage'] / 100, 2);
         }
->>>>>>> main
 
         $inclure = $this->request->getPost('inclure_frais_retrait') === '1';
         $fraisRetrait = $inclure ? $this->operationModel->getFraisApplicable(2, $montant) : 0;

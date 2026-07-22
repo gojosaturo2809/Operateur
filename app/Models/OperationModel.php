@@ -42,11 +42,19 @@ class OperationModel extends Model
         )->getRow()->total ?? 0));
 
         return $totalAuteur + $totalRecu - $totalEpargne;
+        
     }
+        public function findEpargne(int $id_client, string $telephone): float
+    {
+        $db = db_connect();
+        $result = $db->query(
+            "SELECT COALESCE(SUM(val_epargne), 0) AS total FROM epargne WHERE id_client = ?",
+            [$id_client]
+        )->getRow();
 
-    /**
-     * Recherche le frais applicable pour un montant selon le type de transaction
-     */
+        return (float) ($result->total ?? 0);
+    }
+  
     public function getFraisApplicable(int $id_type_operation, float $montant): ?float
     {
         $db = db_connect();

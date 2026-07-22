@@ -9,6 +9,11 @@
         <?= number_format($solde ?? 0, 0, ',', ' ') ?>
         <span class="client-balance-unit">Ar</span>
     </p>
+    <p class="client-balance-label">Epargne</p>
+    <p class="client-balance-amount">
+        <?= number_format($epargne ?? 0, 0, ',', ' ') ?>
+        <span class="client-balance-unit">Ar</span>
+    </p>
     <p class="client-balance-phone">
         <i class="bi bi-phone" style="font-size:.75rem;margin-right:.25rem;"></i>
         <?= esc($telephone ?? '') ?>
